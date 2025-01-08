@@ -1,11 +1,12 @@
+SECRET_KEY = '+je#35#djxep*19i)(^rt$k^=josy11ra(92qpd1p0$_x90k^&'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'your_database_name',
-        'USER': 'your_database_user',
-        'PASSWORD': 'your_database_password',
-        'HOST': '0.0.0.0',  # Allows access from any network
-        'PORT': '5432',      # Default PostgreSQL port
+        'NAME': 'EngSa3d',
+        'USER': 'm7mod',
+        'PASSWORD': '275757',
+        'HOST': 'localhost',  # Set to 'localhost' if the database is on the same machine
+        'PORT': '5432',  # Default is '5432'
     }
 }
 
