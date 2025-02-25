@@ -1,0 +1,16 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Delete Subject{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1 class="title text-center">Delete Subject</h1>
+    <p>Are you sure you want to delete the subject "{{ subject.title }}"?</p>
+    <form method="post">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-danger">Delete</button>
+        <a href="{% url 'image_list' %}" class="btn btn-secondary">Cancel</a>
+    </form>
+</div>
+{% endblock %}

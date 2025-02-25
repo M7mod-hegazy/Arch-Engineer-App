@@ -1,0 +1,5 @@
+{
+  "scripts": {
+    "build:css": "tailwindcss -i ./static/css/tailwind.css -o ./static/css/output.css --watch"
+  }
+}

@@ -1,0 +1,7 @@
+{% if images %}
+    <ul>
+        {% for image in images %}
+            <li>{{ image.customer }} - {{ image.comment }}</li>
+        {% endfor %}
+    </ul>
+{% endif %}

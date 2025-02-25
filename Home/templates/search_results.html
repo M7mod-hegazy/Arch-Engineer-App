@@ -1,0 +1,35 @@
+{% for subject in subjects %}
+    <div class="col-md-4 mb-4">
+        <div class="card">
+            <div class="card-body">
+                <a href="{% url 'edit_subject' subject.pk %}">
+                    <h2 class="card-title">{{ subject.customer }}</h2>
+                    <p class="card-text">{{ subject.comment }}</p>
+                    <p class="card-text">Date Posted: {{ subject.date_posted }}</p>
+                    <p class="card-text">End Date: {{ subject.end_date }}</p>
+                </a>
+                <div class="d-flex justify-content-between align-items-center">
+                    <span class="badge {% if subject.done %}badge-success{% else %}badge-danger{% endif %}">
+                        {% if subject.done %}Done{% else %}Not Done{% endif %}
+                    </span>
+                    <a href="{% url 'delete_subject' subject.pk %}" class="btn btn-sm btn-danger">Delete</a>
+                </div>
+                <div class="slider mt-3">
+                    {% for image in subject.images.all %}
+                        <div>
+                            {% if image.image %}
+                                <img src="{{ image.image.url }}" alt="{{ subject.customer }}" class="img-fluid">
+                            {% endif %}
+                            <div class="image-title">{{ subject.customer }}</div>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <a href="{% url 'delete_image' image.pk %}" class="btn btn-sm btn-danger">Delete</a>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+{% empty %}
+    <p>No subjects found.</p>
+{% endfor %}

@@ -1,19 +1,27 @@
+import os
+from pathlib import Path
+import time
+
+# Define the base directory
+BASE_DIR = Path(__file__).resolve().parent.parent
+
 SECRET_KEY = '+je#35#djxep*19i)(^rt$k^=josy11ra(92qpd1p0$_x90k^&'
+
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
         'NAME': 'EngSa3d',
         'USER': 'm7mod',
         'PASSWORD': '275757',
-        'HOST': 'localhost',  # Set to 'localhost' if the database is on the same machine
+        'HOST': 'localhost',  # IP address of your PostgreSQL server
         'PORT': '5432',  # Default is '5432'
     }
 }
 
 ALLOWED_HOSTS = ['*']  # Allows access from any host
 
-# Other settings...
 DEBUG = True
+
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
@@ -21,7 +29,9 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    # Add your apps here
+    'Home',  # Ensure your app is listed here
+    'django.contrib.sites',
+    #
 ]
 
 MIDDLEWARE = [
@@ -77,4 +87,21 @@ USE_I18N = True
 USE_L10N = True
 USE_TZ = True
 
+# Static files (CSS, JavaScript, images)
+# https://docs.djangoproject.com/en/3.2/howto/static-files/
+
 STATIC_URL = '/static/'
+STATICFILES_DIRS = [
+    os.path.join(BASE_DIR, 'Home/static'),
+]
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+
+# Add a setting to store the CSS version
+CSS_VERSION = str(time.time())
+
+# Override the STATICFILES_STORAGE setting
+STATICFILES_STORAGE = 'Home.storage.CacheBustingStaticFilesStorage'
+
+# Media files settings
+MEDIA_URL = '/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')

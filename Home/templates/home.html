@@ -1,0 +1,514 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load custom_filters %}  {# Add this at the top of your template #}
+
+{% block title %}Subject Management{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <!-- Modern Header -->
+    <div class="row ">
+        <div class="col-md-6">
+            <h1 class="title text-center mb-5">Subject Management</h1>
+        </div>
+       
+    </div>
+    
+    <!-- Modern Filter Bar -->
+    <div class="filter-bar">
+        <!-- Search Box -->
+        <div class="search-box">
+            <form method="get" class="d-flex">
+                <input type="text" name="q" class="form-control" placeholder="Search..." value="{{ query }}">
+                <input type="hidden" name="status" value="{{ status_filter }}">
+                <input type="hidden" name="sort_by" value="{{ sort_by }}">
+                <button type="submit" class="btn btn-primary ml-2">Search</button>
+            </form>
+        </div>
+
+        <!-- Sort Dropdown -->
+        <div class="sort-box">
+            <form method="get" id="sortForm">
+                <input type="hidden" name="q" value="{{ query }}">
+                <input type="hidden" name="status" value="{{ status_filter }}">
+                <select class="form-select enhanced-select" name="sort_by" onchange="this.form.submit()">
+                    <option value="" {% if not sort_by %}selected{% endif %}>Sort by...</option>
+                    <optgroup label="Customer">
+                        <option value="customer_asc" {% if sort_by == 'customer_asc' %}selected{% endif %}>Name (A-Z)</option>
+                        <option value="customer_desc" {% if sort_by == 'customer_desc' %}selected{% endif %}>Name (Z-A)</option>
+                    </optgroup>
+                    <optgroup label="Price">
+                        <option value="price_asc" {% if sort_by == 'price_asc' %}selected{% endif %}>Price: Low to High ($)</option>
+                        <option value="price_desc" {% if sort_by == 'price_desc' %}selected{% endif %}>Price: High to Low ($)</option>
+                    </optgroup>
+                    <optgroup label="Date">
+                        <option value="date_posted_asc" {% if sort_by == 'date_posted_asc' %}selected{% endif %}>Oldest First</option>
+                        <option value="date_posted_desc" {% if sort_by == 'date_posted_desc' %}selected{% endif %}>Newest First</option>
+                    </optgroup>
+                </select>
+            </form>
+        </div>
+
+        <!-- Filter Buttons with counts -->
+        <div class="filter-buttons">
+            <a href="?{% if sort_by %}sort_by={{ sort_by }}{% endif %}" 
+               class="btn {% if status_filter == 'all' or not status_filter %}btn-primary active{% else %}btn-light{% endif %}">
+                All <span class="count-badge">{{ total_count }}</span>
+            </a>
+            
+            <a href="?status=done{% if sort_by %}&sort_by={{ sort_by }}{% endif %}" 
+               class="btn {% if status_filter == 'done' %}btn-success active{% else %}btn-light{% endif %}">
+                Done <span class="count-badge">{{ done_count }}</span>
+            </a>
+            
+            <a href="?status=waiting{% if sort_by %}&sort_by={{ sort_by }}{% endif %}" 
+               class="btn {% if status_filter == 'waiting' %}btn-info active{% else %}btn-light{% endif %}">
+                Waiting <span class="count-badge">{{ waiting_count }}</span>
+            </a>
+            
+            <a href="?status=expired{% if sort_by %}&sort_by={{ sort_by }}{% endif %}" 
+               class="btn {% if status_filter == 'expired' %}btn-danger active{% else %}btn-light{% endif %}">
+                Expired <span class="count-badge">{{ expired_count }}</span>
+            </a>
+        </div>
+    </div>
+    
+    <!-- Update the items count display and add clear buttons -->
+    <div class="results-bar">
+        <div class="results-info">
+            Showing <strong>{{ page_obj.start_index }}</strong> - <strong>{{ page_obj.end_index }}</strong> of <strong>{{ total_count }}</strong> items
+        </div>
+        <div class="active-filters">
+            {% if query %}
+            <span class="filter-tag">
+                Search: "{{ query }}"
+                <a href="?{% if status_filter %}status={{ status_filter }}{% endif %}{% if sort_by %}&sort_by={{ sort_by }}{% endif %}" class="remove-filter"><i class="fas fa-times"></i></a>
+            </span>
+            {% endif %}
+            
+            {% if status_filter and status_filter != 'all' %}
+            <span class="filter-tag">
+                Status: {{ status_filter|title }}
+                <a href="?{% if query %}q={{ query }}{% endif %}{% if sort_by %}&sort_by={{ sort_by }}{% endif %}" class="remove-filter"><i class="fas fa-times"></i></a>
+            </span>
+            {% endif %}
+            
+            {% if sort_by %}
+            <span class="filter-tag">
+                Sort: {{ sort_by|format_sort_label }}
+                <a href="?{% if query %}q={{ query }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}" class="remove-filter"><i class="fas fa-times"></i></a>
+            </span>
+            {% endif %}
+            
+            {% if query or status_filter or sort_by %}
+            <a href="?" class="btn btn-outline-secondary btn-sm clear-all">Clear All</a>
+            {% endif %}
+        </div>
+    </div>
+    
+    <!-- Update total count display -->
+    <div class="text-muted mb-3">
+        Showing {{ page_obj.start_index }} - {{ page_obj.end_index }} of {{ total_count }} items
+    </div>
+    
+ 
+    
+    <!-- Add Subject - Floating Button -->
+    <a href="{% url 'add_subject' %}" class="btn btn-primary btn-add-subject">+</a>
+    
+    <!-- Cards Grid -->
+    <div class="row">
+        {% for subject in page_obj %}
+            <div class="col-lg-6 col-md-6 mb-4">
+                <div class="card status-{{ subject.status }}">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-start mb-3">
+                            <h2 class="card-title">{{ subject.customer }}</h2>
+                            <span class="badge badge-{{ subject.status }}">
+                                {{ subject.status|title }}
+                            </span>
+                        </div>
+                        
+                        {% if subject.price > 0 %}
+                        <div class="price-tag mb-3">${{ subject.price }}</div>
+                        {% endif %}
+                        
+                        <p class="card-text">{{ subject.comment }}</p>
+                        
+                        <div class="date-info">
+                            <span><i class="fas fa-calendar-alt"></i> Posted: {{ subject.date_posted|date:"M d, Y" }}</span>
+                            {% if subject.date_limit %}
+                            <span class="{% if subject.status == 'expired' %}text-danger{% endif %}">
+                                <i class="fas fa-calendar-check"></i> Due: {{ subject.date_limit|date:"M d, Y" }}
+                            </span>
+                            {% endif %}
+                        </div>
+                        
+                        <!-- Update the slider structure inside the cards grid -->
+                        <div class="slider mt-4">
+                            {% for image in subject.images.all %}
+                                <div>
+                                    {% if image.image %}
+                                        <img src="{{ image.image.url }}" alt="Image" class="img-fluid gallery-img" data-gallery="gallery-{{ subject.pk }}" data-index="{{ forloop.counter0 }}">
+                                    {% endif %}
+                                </div>
+                            {% empty %}
+                                <div class="empty-slider">
+                                    <p class="text-muted text-center">No images available</p>
+                                </div>
+                            {% endfor %}
+                            {% if subject.images.count > 1 %}
+                                <div class="slider-nav-circles">
+                                    {% for image in subject.images.all %}
+                                        <button class="nav-circle {% if forloop.first %}active{% endif %}" 
+                                                data-slide="{{ forloop.counter0 }}"></button>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="d-flex justify-content-between mt-4">
+                            <a href="{% url 'edit_subject' subject.pk %}" class="btn btn-sm btn-primary">
+                                <i class="fas fa-edit"></i> Edit
+                            </a>
+                            <a href="{% url 'toggle_subject_done' subject.pk %}" class="btn btn-sm btn-{% if subject.done %}danger{% else %}success{% endif %}">
+                                {% if subject.done %}Mark Undone{% else %}Mark Done{% endif %}
+                            </a>
+                            <a href="{% url 'delete_subject' subject.pk %}" class="btn btn-sm btn-danger">
+                                <i class="fas fa-trash"></i> Delete
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        {% empty %}
+            <div class="col-12">
+                <div class="empty-state">
+                    <img src="{% static 'images/empty-state.svg' %}" alt="No subjects" class="img-fluid" onerror="this.src='https://via.placeholder.com/200x200?text=No+Subjects'">
+                    <h2>No subjects found</h2>
+                    <p>Get started by adding your first subject</p>
+                    <a href="{% url 'add_subject' %}" class="btn btn-primary">Add Subject</a>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+    
+    <!-- Pagination Controls -->
+    <nav aria-label="Page navigation" class="mt-4">
+        <ul class="pagination justify-content-center">
+            {% if page_obj.has_previous %}
+                <li class="page-item">
+                    <a class="page-link" href="?page=1{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if sort_by %}&sort={{ sort_by }}{% endif %}{% if sort_dir %}&dir={{ sort_dir }}{% endif %}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}" aria-label="First">
+                        <span aria-hidden="true">&laquo;&laquo;</span>
+                    </a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if sort_by %}&sort={{ sort_by }}{% endif %}{% if sort_dir %}&dir={{ sort_dir }}{% endif %}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}" aria-label="Previous">
+                        <span aria-hidden="true">&laquo;</span>
+                    </a>
+                </li>
+            {% else %}
+                <li class="page-item disabled">
+                    <a class="page-link" href="#" aria-label="First">
+                        <span aria-hidden="true">&laquo;&laquo;</span>
+                    </a>
+                </li>
+                <li class="page-item disabled">
+                    <a class="page-link" href="#" aria-label="Previous">
+                        <span aria-hidden="true">&laquo;</span>
+                    </a>
+                </li>
+            {% endif %}
+            
+            {% for i in page_obj.paginator.page_range %}
+                {% if page_obj.number == i %}
+                    <li class="page-item active">
+                        <span class="page-link">{{ i }}</span>
+                    </li>
+                {% elif i > page_obj.number|add:"-3" and i < page_obj.number|add:"3" %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ i }}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if sort_by %}&sort={{ sort_by }}{% endif %}{% if sort_dir %}&dir={{ sort_dir }}{% endif %}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}">{{ i }}</a>
+                    </li>
+                {% endif %}
+            {% endfor %}
+            
+            {% if page_obj.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if sort_by %}&sort={{ sort_by }}{% endif %}{% if sort_dir %}&dir={{ sort_dir }}{% endif %}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}" aria-label="Next">
+                        <span aria-hidden="true">&raquo;</span>
+                    </a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if sort_by %}&sort={{ sort_by }}{% endif %}{% if sort_dir %}&dir={{ sort_dir }}{% endif %}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}" aria-label="Last">
+                        <span aria-hidden="true">&raquo;&raquo;</span>
+                    </a>
+                </li>
+            {% else %}
+                <li class="page-item disabled">
+                    <a class="page-link" href="#" aria-label="Next">
+                        <span aria-hidden="true">&raquo;</span>
+                    </a>
+                </li>
+                <li class="page-item disabled">
+                    <a class="page-link" href="#" aria-label="Last">
+                        <span aria-hidden="true">&raquo;&raquo;</span>
+                    </a>
+                </li>
+            {% endif %}
+        </ul>
+    </nav>
+</div>
+
+<!-- Update Fullscreen Gallery -->
+<div class="fullscreen-gallery" id="fullscreen-gallery">
+    <div class="gallery-toolbar">
+        <button class="gallery-zoom-in"><i class="fas fa-search-plus"></i></button>
+        <button class="gallery-zoom-out"><i class="fas fa-search-minus"></i></button>
+        <button class="gallery-download"><i class="fas fa-download"></i></button>
+        <button class="gallery-close"><i class="fas fa-times"></i></button>
+    </div>
+    <button class="gallery-prev"><i class="fas fa-chevron-left"></i></button>
+    <button class="gallery-next"><i class="fas fa-chevron-right"></i></button>
+    <div class="gallery-content">
+        <img src="" alt="Fullscreen Image" id="gallery-img">
+    </div>
+    <div class="gallery-dots"></div>
+</div>
+
+<script>
+    $(document).ready(function(){
+        // Wait for DOM to be fully loaded
+        setTimeout(function() {
+            // Initialize slick slider with updated options
+            $('.slider').each(function() {
+                if (!$(this).hasClass('slick-initialized')) {
+                    $(this).slick({
+                        dots: true,
+                        infinite: true,
+                        speed: 300,
+                        slidesToShow: 1,
+                        adaptiveHeight: false,
+                        autoplay: true,
+                        autoplaySpeed: 5000,
+                        prevArrow: '<button type="button" class="slick-prev"><i class="fas fa-chevron-left"></i></button>',
+                        nextArrow: '<button type="button" class="slick-next"><i class="fas fa-chevron-right"></i></button>',
+                        customPaging: function(slider, i) {
+                            return $('<button />').addClass('dot');
+                        },
+                        appendDots: '.slick-dots-container', // Change this
+                        dotsClass: 'slick-dots'
+                    });
+                }
+            });
+        }, 100);
+
+        // Auto-suggest functionality
+        $('#searchInput').on('keyup', function() {
+            const query = $(this).val();
+            if (query.length > 1) {
+                $.ajax({
+                    url: "{% url 'get_suggestions' %}",
+                    data: {
+                        'term': query
+                    },
+                    dataType: 'json',
+                    success: function(data) {
+                        const suggestionBox = $('#suggestionBox');
+                        suggestionBox.empty();
+                        
+                        if (data.suggestions.length > 0) {
+                            data.suggestions.forEach(function(suggestion) {
+                                const item = $('<div class="suggestion-item"></div>').text(suggestion);
+                                item.on('click', function() {
+                                    $('#searchInput').val(suggestion);
+                                    suggestionBox.hide();
+                                    $('#searchForm').submit();
+                                });
+                                suggestionBox.append(item);
+                            });
+                            suggestionBox.show();
+                        } else {
+                            suggestionBox.hide();
+                        }
+                    }
+                });
+            } else {
+                $('#suggestionBox').hide();
+            }
+        });
+        
+        // Hide suggestions on click outside
+        $(document).on('click', function(e) {
+            if (!$(e.target).closest('.autocomplete-wrapper').length) {
+                $('#suggestionBox').hide();
+            }
+        });
+
+        // Sort functionality
+        $('#sort-by').change(function() {
+            var currentUrl = new URL(window.location.href);
+            currentUrl.searchParams.set('sort_by', $(this).val());
+            window.location.href = currentUrl.toString();
+        });
+
+        // Fullscreen Gallery Functionality
+        let currentGallery = [];
+        let currentIndex = 0;
+        let currentScale = 1;
+
+        $('.gallery-img').click(function() {
+            const galleryId = $(this).data('gallery');
+            currentIndex = $(this).data('index');
+            currentScale = 1;
+            
+            currentGallery = $(`.gallery-img[data-gallery="${galleryId}"]`).map(function() {
+                return $(this).attr('src');
+            }).get();
+
+            showGalleryImage(currentIndex);
+            $('#fullscreen-gallery').addClass('active');
+        });
+
+        function showGalleryImage(index) {
+            $('#gallery-img').attr('src', currentGallery[index]);
+            updateGalleryDots();
+        }
+
+        function updateGalleryDots() {
+            const dots = currentGallery.map((_, i) => 
+                `<button class="gallery-dot ${i === currentIndex ? 'active' : ''}" data-index="${i}"></button>`
+            ).join('');
+            $('.gallery-dots').html(dots);
+        }
+
+        $('.gallery-close').click(function() {
+            $('#fullscreen-gallery').removeClass('active');
+        });
+
+        $('.gallery-prev').click(function() {
+            currentIndex = (currentIndex - 1 + currentGallery.length) % currentGallery.length;
+            showGalleryImage(currentIndex);
+        });
+
+        $('.gallery-next').click(function() {
+            currentIndex = (currentIndex + 1) % currentGallery.length;
+            showGalleryImage(currentIndex);
+        });
+
+        $(document).on('click', '.gallery-dot', function() {
+            currentIndex = $(this).data('index');
+            showGalleryImage(currentIndex);
+        });
+
+        // Close gallery with escape key
+        $(document).keyup(function(e) {
+            if (e.key === "Escape") {
+                $('#fullscreen-gallery').removeClass('active');
+            }
+        });
+
+        // Zoom functionality
+        $('.gallery-zoom-in').click(function() {
+            currentScale = Math.min(currentScale + 0.2, 3);
+            updateZoom();
+        });
+
+        $('.gallery-zoom-out').click(function() {
+            currentScale = Math.max(currentScale - 0.2, 0.5);
+            updateZoom();
+        });
+
+        function updateZoom() {
+            $('#gallery-img').css('transform', `scale(${currentScale})`);
+        }
+
+        // Download functionality
+        $('.gallery-download').click(function() {
+            const imgUrl = currentGallery[currentIndex];
+            const link = document.createElement('a');
+            link.href = imgUrl;
+            link.download = 'image.jpg';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        });
+
+        // Keyboard navigation
+        $(document).keydown(function(e) {
+            if ($('#fullscreen-gallery').hasClass('active')) {
+                switch(e.key) {
+                    case "ArrowLeft":
+                        $('.gallery-prev').click();
+                        break;
+                    case "ArrowRight":
+                        $('.gallery-next').click();
+                        break;
+                    case "Escape":
+                        $('.gallery-close').click();
+                        break;
+                    case "+":
+                        $('.gallery-zoom-in').click();
+                        break;
+                    case "-":
+                        $('.gallery-zoom-out').click();
+                        break;
+                }
+            }
+        });
+
+        // Gallery functionality
+        $('.fullscreen-gallery').on('click', function(e) {
+            // Close gallery when clicking outside the image
+            if ($(e.target).hasClass('fullscreen-gallery')) {
+                $(this).removeClass('active');
+                currentScale = 1;
+                updateZoom();
+            }
+        });
+
+        // Stop propagation for gallery controls
+        $('.gallery-content, .gallery-toolbar button, .gallery-prev, .gallery-next, .gallery-dots').on('click', function(e) {
+            e.stopPropagation();
+        });
+
+        // Reinitialize gallery click handlers
+        $('.gallery-img').off('click').on('click', function(e) {
+            e.preventDefault();
+            const galleryId = $(this).data('gallery');
+            currentIndex = $(this).data('index');
+            currentScale = 1;
+            
+            currentGallery = $(`.gallery-img[data-gallery="${galleryId}"]`).map(function() {
+                return $(this).attr('src');
+            }).get();
+
+            showGalleryImage(currentIndex);
+            $('#fullscreen-gallery').addClass('active');
+        });
+
+        // Ensure gallery controls work
+        $('.gallery-toolbar button, .gallery-prev, .gallery-next').css('pointer-events', 'auto');
+        // Ensure gallery controls work
+        $('.gallery-toolbar button, .gallery-prev, .gallery-next').css('pointer-events', 'auto');
+        
+        // Refresh slider layout after content loads
+        $(window).on('load', function() {
+            $('.slider').slick('setPosition');
+        });
+
+        // Add navigation circle functionality
+        $('.slider').on('afterChange', function(event, slick, currentSlide) {
+            $(this).find('.nav-circle').removeClass('active');
+            $(this).find(`.nav-circle[data-slide="${currentSlide}"]`).addClass('active');
+        });
+
+        $('.nav-circle').click(function() {
+            const slideIndex = $(this).data('slide');
+            $(this).closest('.slider').slick('slickGoTo', slideIndex);
+        });
+    });
+</script>
+
+<!-- Add Font Awesome to base.html if not already present -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+{% endblock %}

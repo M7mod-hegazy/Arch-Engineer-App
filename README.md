@@ -20,6 +20,8 @@ This is a Django project configured to use a PostgreSQL database. It is designed
    ```
    python -m venv venv
    source venv/bin/activate  # On Windows use `venv\Scripts\activate`
+   python manage.py runserver
+
    ```
 
 3. Install the required packages:
@@ -33,6 +35,7 @@ This is a Django project configured to use a PostgreSQL database. It is designed
 5. Run migrations:
    ```
    python manage.py migrate
+   python manage.py makemigrations
    ```
 
 6. Create a superuser (optional):

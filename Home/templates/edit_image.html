@@ -1,0 +1,15 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Edit Image{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1 class="title text-center">Edit Image</h1>
+    <form method="post" enctype="multipart/form-data" class="form">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit" class="btn btn-primary mt-2">Save</button>
+    </form>
+</div>
+{% endblock %}

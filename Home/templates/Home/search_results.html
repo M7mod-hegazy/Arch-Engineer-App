@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Search Results</title>
+</head>
+<body>
+    <h1>Search Results</h1>
+
+    {% if query %}
+        <h2>Results for: {{ query }}</h2>
+    {% endif %}
+
+    {% if images %}
+        <ul>
+            {% for image in images %}
+                <li>{{ image.customer }} - {{ image.comment }}</li>
+            {% endfor %}
+        </ul>
+    {% else %}
+        
+    {% endif %}
+
+    <a href="{% url 'image_list' %}">Back to Image List</a>
+</body>
+</html>
