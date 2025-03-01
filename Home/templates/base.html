@@ -10,8 +10,9 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/slick-carousel/1.8.1/slick.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/slick-carousel/1.8.1/slick-theme.min.css" rel="stylesheet">
-    <link href="{% static 'css/styles.css' %}?v={{settings.CSS_VERSION}}" rel="stylesheet">
-    <link href="{% static 'css/about_contact.css' %}?v={{settings.CSS_VERSION}}" rel="stylesheet">
+    <link href="{% static 'css/styles.css' %}?v={% now 'U' %}" rel="stylesheet">
+    <link href="{% static 'css/dark-mode.css' %}?v={% now 'U' %}" rel="stylesheet">
+    <link href="{% static 'css/about_contact.css' %}?v={% now 'U' %}" rel="stylesheet">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Roboto+Slab:wght@400;500;600&display=swap" rel="stylesheet">
@@ -20,6 +21,7 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/slick-carousel/1.8.1/slick.min.js"></script>
     <style>
+        /* Only keep basic styles here, remove all dark mode styles */
         body {
             font-family: 'Poppins', sans-serif;
             background-color: #f8f9fa;
@@ -40,12 +42,175 @@
         .pagination .page-link {
             color: #ff9800;
         }
+        /* Control Panel Styles */
+        .navbar .btn-group {
+            margin-right: 1rem;
+        }
+
+        .navbar .form-select {
+            background-color: transparent;
+            border-color: #dee2e6;
+        }
+
+        #darkModeToggle {
+            width: 40px;
+            height: 40px;
+            padding: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            transition: all 0.3s ease;
+        }
+
+        #darkModeToggle:hover {
+            transform: scale(1.1);
+        }
+
+        /* Enhanced Control Panel Styles */
+        .size-control-group {
+            display: flex;
+            align-items: center;
+            background: var(--bg-secondary);
+            border-radius: 8px;
+            padding: 4px;
+            gap: 8px;
+        }
+
+        .size-indicator {
+            min-width: 60px;
+            text-align: center;
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+
+        .enhanced-select {
+            min-width: 120px;
+            padding: 8px 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            background-image: url("data:image/svg+xml,...");
+            background-repeat: no-repeat;
+            background-position: right 8px center;
+            background-size: 16px;
+        }
+
+        /* Dynamic color variables */
+        :root {
+            --bg-primary: #ffffff;
+            --bg-secondary: #f8f9fa;
+            --text-primary: #212529;
+            --text-secondary: #6c757d;
+            --border-color: #dee2e6;
+        }
+
+        /* Control Panel Styles */
+        .control-panel {
+            position: sticky;
+            top: 70px;
+            z-index: 100;
+            background: var(--bg-primary);
+            border-bottom: 1px solid var(--border-color);
+            margin-bottom: 1rem;
+            padding: 0.5rem 0;
+            transition: all 0.3s ease;
+        }
+
+        .control-panel-inner {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 2rem;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 0 1rem;
+        }
+
+        .control-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .control-item label {
+            font-size: 0.8rem;
+            font-weight: 500;
+            color: var(--text-secondary);
+            margin: 0;
+        }
+
+        .size-control-group {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: var(--bg-secondary);
+            padding: 0.25rem;
+            border-radius: 8px;
+        }
+
+        .btn-control {
+            width: 32px;
+            height: 32px;
+            padding: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 6px;
+            background: transparent;
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+        }
+
+        .size-indicator {
+            min-width: 60px;
+            text-align: center;
+            font-weight: 500;
+        }
+
+        .btn-theme {
+            width: 32px;
+            height: 32px;
+            padding: 0;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Enhanced Select */
+        .enhanced-select {
+            min-width: 100px;
+            padding: 0.4rem;
+            border-radius: 6px;
+            border: 1px solid var(--border-color);
+            background-color: var(--bg-secondary);
+        }
+
+        /* Responsive Styles */
+        @media (max-width: 768px) {
+            .control-panel-inner {
+                flex-wrap: wrap;
+                gap: 1rem;
+            }
+
+            .control-item {
+                flex: 1;
+                min-width: 120px;
+            }
+
+            .size-control-group {
+                width: 100%;
+                justify-content: center;
+            }
+        }
     </style>
 </head>
 <body>
     <header>
         <nav class="navbar navbar-expand-lg navbar-light">
             <div class="container">
+          
                 <a class="navbar-brand" href="{% url 'image_list' %}">
                     <img src="{% static 'images/icon.png' %}" alt="Site Icon" class="site-icon">
                     <span>Subject Manager</span>
@@ -76,6 +241,14 @@
                             </a>
                         </li>
                     </ul>
+                    <div class="d-flex align-items-center gap-3">
+                        <!-- Dark Mode Toggle -->
+                        <button id="darkModeToggle" class="btn btn-outline-secondary">
+                            <i class="fas fa-moon"></i>
+                        </button>
+                        
+
+                    </div>
                 </div>
             </div>
         </nav>
@@ -100,12 +273,14 @@
     <footer class="footer">
         <div class="footer-container">
             <div class="footer-content">
+                <!-- Brand section - always visible -->
                 <div class="footer-brand">
                     <img src="{% static 'images/icon.png' %}" alt="Site Icon" class="footer-logo">
                     <h3>Subject Manager</h3>
-                    <p>Making academic task management easier</p>
+                    <p class="d-none d-md-block">Making academic task management easier</p>
                 </div>
                 
+                <!-- Links section - hidden on mobile -->
                 <div class="footer-links">
                     <div class="footer-section">
                         <h4>Quick Links</h4>
@@ -139,7 +314,8 @@
             
             <div class="footer-bottom">
                 <p>&copy; {% now "Y" %} Subject Manager. All rights reserved.</p>
-                <div class="footer-bottom-links">
+                <!-- Hide links on mobile using Bootstrap classes -->
+                <div class="footer-bottom-links d-none d-md-flex">
                     <a href="#">Privacy Policy</a>
                     <a href="#">Terms of Service</a>
                 </div>
@@ -192,6 +368,112 @@
             if (!$(e.target).closest('.search-wrapper').length) {
                 $('#suggestionBox').hide();
             }
+        });
+
+        // Dark Mode
+        const darkModeToggle = document.getElementById('darkModeToggle');
+        const body = document.body;
+        const darkModeKey = 'darkMode';
+
+        // Initialize dark mode from localStorage
+        if (localStorage.getItem(darkModeKey) === 'enabled') {
+            body.classList.add('dark-mode');
+            darkModeToggle.innerHTML = '<i class="fas fa-sun"></i>';
+        }
+
+        darkModeToggle.addEventListener('click', () => {
+            body.classList.toggle('dark-mode');
+            const isDarkMode = body.classList.contains('dark-mode');
+            localStorage.setItem(darkModeKey, isDarkMode ? 'enabled' : 'disabled');
+            darkModeToggle.innerHTML = isDarkMode ? '<i class="fas fa-sun"></i>' : '<i class="fas fa-moon"></i>';
+        });
+
+        // Card Size Control
+        const cards = document.querySelectorAll('.card');
+        let currentSize = parseInt(localStorage.getItem('cardSize') || 6);
+        const sizeIndicator = document.querySelector('.size-indicator');
+        const validSizes = [2, 3, 4, 6, 12];
+
+        function updateCardSize() {
+            cards.forEach(card => {
+                card.closest('[class*="col-"]').className = `col-lg-${currentSize} col-md-${Math.min(currentSize * 2, 12)} mb-4`;
+            });
+            localStorage.setItem('cardSize', currentSize);
+            sizeIndicator.textContent = `${12/currentSize} cols`;
+        }
+
+        document.getElementById('increaseCards').addEventListener('click', () => {
+            const currentIndex = validSizes.indexOf(currentSize);
+            if (currentIndex < validSizes.length - 1) {
+                currentSize = validSizes[currentIndex + 1];
+                updateCardSize();
+            }
+        });
+
+        document.getElementById('decreaseCards').addEventListener('click', () => {
+            const currentIndex = validSizes.indexOf(currentSize);
+            if (currentIndex > 0) {
+                currentSize = validSizes[currentIndex - 1];
+                updateCardSize();
+            }
+        });
+
+        // Items Per Page
+        const itemsPerPage = document.getElementById('itemsPerPage');
+        itemsPerPage.value = new URLSearchParams(window.location.search).get('per_page') || '2';
+
+        itemsPerPage.addEventListener('change', () => {
+            const searchParams = new URLSearchParams(window.location.search);
+            searchParams.set('per_page', itemsPerPage.value);
+            searchParams.set('page', '1');
+            window.location.search = searchParams.toString();
+        });
+
+        // Initialize card size from localStorage
+        updateCardSize();
+
+        // Enhanced Pagination
+        function updatePagination(total, current, perPage) {
+            const pageCount = Math.ceil(total / perPage);
+            let html = '';
+            
+            // First page
+            html += `<li class="page-item ${current === 1 ? 'disabled' : ''}">
+                <a class="page-link" href="?page=1">«</a>
+            </li>`;
+            
+            // Previous 5 pages
+            for (let i = Math.max(1, current - 5); i < current; i++) {
+                html += `<li class="page-item">
+                    <a class="page-link" href="?page=${i}">${i}</a>
+                </li>`;
+            }
+            
+            // Current page
+            html += `<li class="page-item active">
+                <span class="page-link">${current}</span>
+            </li>`;
+            
+            // Next 5 pages
+            for (let i = current + 1; i <= Math.min(pageCount, current + 5); i++) {
+                html += `<li class="page-item">
+                    <a class="page-link" href="?page=${i}">${i}</a>
+                </li>`;
+            }
+            
+            // Last page
+            html += `<li class="page-item ${current === pageCount ? 'disabled' : ''}">
+                <a class="page-link" href="?page=${pageCount}">»</a>
+            </li>`;
+            
+            document.querySelector('.pagination').innerHTML = html;
+        }
+
+        // Initialize enhanced features
+        document.addEventListener('DOMContentLoaded', () => {
+            updateCardSize();
+            // Call updatePagination with your actual values
+            // updatePagination(totalItems, currentPage, itemsPerPage);
         });
     });
     </script>

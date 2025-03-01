@@ -73,11 +73,28 @@
         </div>
     </div>
     
+ 
+
     <!-- Update the items count display and add clear buttons -->
     <div class="results-bar">
         <div class="results-info">
             Showing <strong>{{ page_obj.start_index }}</strong> - <strong>{{ page_obj.end_index }}</strong> of <strong>{{ total_count }}</strong> items
         </div>
+          <!-- Display Controls Panel -->
+    <div class="display-controls">
+        <div class="controls-wrapper">
+            <div class="control-section">
+                <label>Columns:</label>
+                <div class="btn-group layout-controls">
+                    <button type="button" class="btn btn-control" id="layout-1" title="1 Column">1</button>
+                    <button type="button" class="btn btn-control" id="layout-2" title="2 Columns">2</button>
+                    <button type="button" class="btn btn-control active" id="layout-3" title="3 Columns">3</button>
+                    <button type="button" class="btn btn-control" id="layout-4" title="4 Columns">4</button>
+                    <button type="button" class="btn btn-control" id="layout-5" title="5 Columns">5</button>
+                </div>
+            </div>
+        </div>
+    </div>
         <div class="active-filters">
             {% if query %}
             <span class="filter-tag">
@@ -106,20 +123,18 @@
         </div>
     </div>
     
-    <!-- Update total count display -->
-    <div class="text-muted mb-3">
-        Showing {{ page_obj.start_index }} - {{ page_obj.end_index }} of {{ total_count }} items
-    </div>
+   
+  
     
- 
+       
     
     <!-- Add Subject - Floating Button -->
     <a href="{% url 'add_subject' %}" class="btn btn-primary btn-add-subject">+</a>
     
     <!-- Cards Grid -->
-    <div class="row">
+    <div class="cards-grid" id="cardsContainer">
         {% for subject in page_obj %}
-            <div class="col-lg-6 col-md-6 mb-4">
+            <div class="col">
                 <div class="card status-{{ subject.status }}">
                     <div class="card-body">
                         <div class="d-flex justify-content-between align-items-start mb-3">
@@ -135,380 +150,586 @@
                         
                         <p class="card-text">{{ subject.comment }}</p>
                         
+                        <!-- Update the date display in card -->
                         <div class="date-info">
-                            <span><i class="fas fa-calendar-alt"></i> Posted: {{ subject.date_posted|date:"M d, Y" }}</span>
+                            <span>
+                                <i class="fas fa-calendar-alt"></i>
+                                Posted: {{ subject.date_posted|date:"M d, Y" }}
+                            </span>
                             {% if subject.date_limit %}
-                            <span class="{% if subject.status == 'expired' %}text-danger{% endif %}">
-                                <i class="fas fa-calendar-check"></i> Due: {{ subject.date_limit|date:"M d, Y" }}
+                            <span class="{% if subject.status == 'expired' %}expired-date{% endif %}">
+                                <i class="fas fa-hourglass-end"></i>
+                                Due: {{ subject.date_limit|date:"M d, Y" }}
                             </span>
                             {% endif %}
                         </div>
                         
-                        <!-- Update the slider structure inside the cards grid -->
+                        <!-- Update the slider structure inside the card -->
                         <div class="slider mt-4">
                             {% for image in subject.images.all %}
-                                <div>
-                                    {% if image.image %}
-                                        <img src="{{ image.image.url }}" alt="Image" class="img-fluid gallery-img" data-gallery="gallery-{{ subject.pk }}" data-index="{{ forloop.counter0 }}">
-                                    {% endif %}
+                                {% if image.image %}
+                                <div class="slider-item">
+                                    <img src="{{ image.image.url }}" 
+                                         alt="Image" 
+                                         class="gallery-img" 
+                                         data-gallery="gallery-{{ subject.pk }}" 
+                                         data-index="{{ forloop.counter0 }}"
+                                         onclick="openGallery(this)">
+                                    <div class="image-hover-overlay">
+                                        <i class="fas fa-search-plus"></i>
+                                    </div>
                                 </div>
+                                {% endif %}
                             {% empty %}
                                 <div class="empty-slider">
                                     <p class="text-muted text-center">No images available</p>
                                 </div>
                             {% endfor %}
-                            {% if subject.images.count > 1 %}
-                                <div class="slider-nav-circles">
-                                    {% for image in subject.images.all %}
-                                        <button class="nav-circle {% if forloop.first %}active{% endif %}" 
-                                                data-slide="{{ forloop.counter0 }}"></button>
-                                    {% endfor %}
-                                </div>
-                            {% endif %}
                         </div>
                         
-                        <div class="d-flex justify-content-between mt-4">
-                            <a href="{% url 'edit_subject' subject.pk %}" class="btn btn-sm btn-primary">
-                                <i class="fas fa-edit"></i> Edit
-                            </a>
-                            <a href="{% url 'toggle_subject_done' subject.pk %}" class="btn btn-sm btn-{% if subject.done %}danger{% else %}success{% endif %}">
-                                {% if subject.done %}Mark Undone{% else %}Mark Done{% endif %}
-                            </a>
-                            <a href="{% url 'delete_subject' subject.pk %}" class="btn btn-sm btn-danger">
-                                <i class="fas fa-trash"></i> Delete
-                            </a>
+                        <div class="card-actions">
+                            <div class="btn-group w-100">
+                                <a href="{% url 'edit_subject' subject.pk %}" class="btn btn-primary" title="Edit Subject">
+                                    <i class="fas fa-edit"></i>
+                                    <span class="btn-text d-none d-md-inline">Edit</span>
+                                </a>
+                                <a href="{% url 'toggle_subject_done' subject.pk %}" 
+                                   class="btn {% if subject.done %}btn-danger{% else %}btn-success{% endif %}"
+                                   title="{% if subject.done %}Mark as Undone{% else %}Mark as Done{% endif %}">
+                                    <i class="fas {% if subject.done %}fa-times{% else %}fa-check{% endif %}"></i>
+                                    <span class="btn-text d-none d-md-inline">{% if subject.done %}Undo{% else %}Done{% endif %}</span>
+                                </a>
+                                <a href="{% url 'delete_subject' subject.pk %}" class="btn btn-danger" title="Delete Subject">
+                                    <i class="fas fa-trash"></i>
+                                    <span class="btn-text d-none d-md-inline">Delete</span>
+                                </a>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
-        {% empty %}
-            <div class="col-12">
-                <div class="empty-state">
-                    <img src="{% static 'images/empty-state.svg' %}" alt="No subjects" class="img-fluid" onerror="this.src='https://via.placeholder.com/200x200?text=No+Subjects'">
-                    <h2>No subjects found</h2>
-                    <p>Get started by adding your first subject</p>
-                    <a href="{% url 'add_subject' %}" class="btn btn-primary">Add Subject</a>
-                </div>
-            </div>
         {% endfor %}
     </div>
-    
-    <!-- Pagination Controls -->
+
+    <!-- Pagination -->
+    {% if page_obj.paginator.num_pages > 1 %}
     <nav aria-label="Page navigation" class="mt-4">
         <ul class="pagination justify-content-center">
             {% if page_obj.has_previous %}
                 <li class="page-item">
-                    <a class="page-link" href="?page=1{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if sort_by %}&sort={{ sort_by }}{% endif %}{% if sort_dir %}&dir={{ sort_dir }}{% endif %}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}" aria-label="First">
-                        <span aria-hidden="true">&laquo;&laquo;</span>
-                    </a>
+                    <a class="page-link" href="?page=1" title="First"><i class="fas fa-angle-double-left"></i></a>
                 </li>
                 <li class="page-item">
-                    <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if sort_by %}&sort={{ sort_by }}{% endif %}{% if sort_dir %}&dir={{ sort_dir }}{% endif %}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}" aria-label="Previous">
-                        <span aria-hidden="true">&laquo;</span>
-                    </a>
-                </li>
-            {% else %}
-                <li class="page-item disabled">
-                    <a class="page-link" href="#" aria-label="First">
-                        <span aria-hidden="true">&laquo;&laquo;</span>
-                    </a>
-                </li>
-                <li class="page-item disabled">
-                    <a class="page-link" href="#" aria-label="Previous">
-                        <span aria-hidden="true">&laquo;</span>
-                    </a>
+                    <a class="page-link" href="?page={{ page_obj.previous_page_number }}" title="Previous"><i class="fas fa-angle-left"></i></a>
                 </li>
             {% endif %}
-            
-            {% for i in page_obj.paginator.page_range %}
-                {% if page_obj.number == i %}
+
+            {% for num in page_obj.paginator.page_range %}
+                {% if page_obj.number == num %}
                     <li class="page-item active">
-                        <span class="page-link">{{ i }}</span>
+                        <span class="page-link">{{ num }}</span>
                     </li>
-                {% elif i > page_obj.number|add:"-3" and i < page_obj.number|add:"3" %}
+                {% else %}
                     <li class="page-item">
-                        <a class="page-link" href="?page={{ i }}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if sort_by %}&sort={{ sort_by }}{% endif %}{% if sort_dir %}&dir={{ sort_dir }}{% endif %}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}">{{ i }}</a>
+                        <a class="page-link" href="?page={{ num }}">{{ num }}</a>
                     </li>
                 {% endif %}
             {% endfor %}
-            
+
             {% if page_obj.has_next %}
                 <li class="page-item">
-                    <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if sort_by %}&sort={{ sort_by }}{% endif %}{% if sort_dir %}&dir={{ sort_dir }}{% endif %}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}" aria-label="Next">
-                        <span aria-hidden="true">&raquo;</span>
-                    </a>
+                    <a class="page-link" href="?page={{ page_obj.next_page_number }}" title="Next"><i class="fas fa-angle-right"></i></a>
                 </li>
                 <li class="page-item">
-                    <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if sort_by %}&sort={{ sort_by }}{% endif %}{% if sort_dir %}&dir={{ sort_dir }}{% endif %}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}" aria-label="Last">
-                        <span aria-hidden="true">&raquo;&raquo;</span>
-                    </a>
-                </li>
-            {% else %}
-                <li class="page-item disabled">
-                    <a class="page-link" href="#" aria-label="Next">
-                        <span aria-hidden="true">&raquo;</span>
-                    </a>
-                </li>
-                <li class="page-item disabled">
-                    <a class="page-link" href="#" aria-label="Last">
-                        <span aria-hidden="true">&raquo;&raquo;</span>
-                    </a>
+                    <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}" title="Last"><i class="fas fa-angle-double-right"></i></a>
                 </li>
             {% endif %}
         </ul>
     </nav>
+    {% endif %}
 </div>
 
-<!-- Update Fullscreen Gallery -->
-<div class="fullscreen-gallery" id="fullscreen-gallery">
+<!-- Replace the gallery section with this updated version -->
+<div class="modal-gallery" id="galleryModal">
     <div class="gallery-toolbar">
-        <button class="gallery-zoom-in"><i class="fas fa-search-plus"></i></button>
-        <button class="gallery-zoom-out"><i class="fas fa-search-minus"></i></button>
-        <button class="gallery-download"><i class="fas fa-download"></i></button>
-        <button class="gallery-close"><i class="fas fa-times"></i></button>
+        <button class="zoom-in" title="Zoom In"><i class="fas fa-search-plus"></i></button>
+        <button class="zoom-out" title="Zoom Out"><i class="fas fa-search-minus"></i></button>
+        <button class="download" title="Download"><i class="fas fa-download"></i></button>
+        <button class="close-gallery" title="Close"><i class="fas fa-times"></i></button>
     </div>
-    <button class="gallery-prev"><i class="fas fa-chevron-left"></i></button>
-    <button class="gallery-next"><i class="fas fa-chevron-right"></i></button>
-    <div class="gallery-content">
-        <img src="" alt="Fullscreen Image" id="gallery-img">
-    </div>
-    <div class="gallery-dots"></div>
+    <button class="gallery-arrow gallery-prev" title="Previous"><i class="fas fa-chevron-left"></i></button>
+    <button class="gallery-arrow gallery-next" title="Next"><i class="fas fa-chevron-right"></i></button>
+    <img class="modal-content" id="galleryImg">
+    <div class="gallery-navigation"></div>
 </div>
+
+<style>
+/* Update existing gallery styles */
+.modal-gallery {
+    display: none;
+    position: fixed;
+    z-index: 9999;
+    padding: 50px;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0,0,0,0.9);
+}
+
+.modal-content {
+    margin: auto;
+    display: block;
+    max-width: 90%;
+    max-height: 90vh;
+    transform-origin: center;
+    transition: transform 0.3s ease;
+}
+
+/* Gallery toolbar */
+.gallery-toolbar {
+    position: fixed;
+    top: 15px;
+    right: 15px;
+    display: flex;
+    gap: 10px;
+}
+
+.gallery-toolbar button {
+    background: rgba(255, 255, 255, 0.2);
+    border: none;
+    color: white;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+}
+
+.gallery-toolbar button:hover {
+    background: rgba(255, 255, 255, 0.3);
+}
+
+/* Fix slider visibility */
+.slider {
+    overflow: visible !important;
+}
+
+.slick-prev,
+.slick-next {
+    z-index: 1 !important;
+}
+
+/* Remove overlay from card */
+.image-hover-overlay {
+    pointer-events: none;
+}
+
+.gallery-img {
+    cursor: pointer;
+    position: relative;
+    z-index: 2;
+}
+
+.btn-control {
+    width: 40px !important;
+    height: 40px !important;
+    padding: 0 !important;
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid #dee2e6;
+    background: #f8f9fa;
+    color: #6c757d;
+    transition: all 0.2s ease;
+    margin: 0 2px;
+}
+
+.btn-control:hover {
+    background: #e9ecef;
+    color: #4361ee;
+    border-color: #4361ee;
+}
+
+.btn-control.active {
+    background: #4361ee !important;
+    color: white !important;
+    border-color: #4361ee !important;
+    box-shadow: 0 2px 5px rgba(67, 97, 238, 0.3);
+}
+
+.btn-control i {
+    font-size: 1.1rem;
+}
+
+.cards-grid {
+    display: grid;
+    gap: 1.5rem;
+    transition: all 0.3s ease;
+    width: 100%;
+}
+
+.cards-grid[data-columns="1"] { grid-template-columns: 1fr; }
+.cards-grid[data-columns="1"] .card { max-width: 100%; }
+
+.cards-grid[data-columns="2"] { grid-template-columns: repeat(2, 1fr); }
+.cards-grid[data-columns="2"] .card { max-width: 100%; }
+
+.cards-grid[data-columns="3"] { grid-template-columns: repeat(3, 1fr); }
+.cards-grid[data-columns="3"] .card { max-width: 100%; }
+
+.cards-grid[data-columns="4"] { grid-template-columns: repeat(4, 1fr); }
+.cards-grid[data-columns="4"] .card { max-width: 100%; }
+
+.cards-grid[data-columns="5"] { grid-template-columns: repeat(5, 1fr); }
+.cards-grid[data-columns="5"] .card { max-width: 100%; }
+
+/* Remove all other .slick-dots styles and replace with this single implementation */
+.slick-dots {
+    position: absolute !important;
+    bottom: -30px !important;
+    left: 50% !important;
+    transform: translateX(-50%) !important;
+    background: rgba(0, 0, 0, 0.6);
+    padding: 5px 15px !important;
+    border-radius: 20px;
+    display: flex !important;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+    width: auto !important;
+    margin: 0 !important;
+    list-style: none;
+    z-index: 5;
+}
+
+.slick-dots li {
+    margin: 0 !important;
+    width: 8px !important;
+    height: 8px !important;
+}
+
+.slick-dots li button {
+    width: 8px !important;
+    height: 8px !important;
+    padding: 0 !important;
+    border-radius: 50% !important;
+    background: rgba(255, 255, 255, 0.4) !important;
+    border: none !important;
+    font-size: 0;
+    cursor: pointer;
+}
+
+.slick-dots li.slick-active button {
+    background: white !important;
+    transform: scale(1.2);
+}
+
+/* Enhanced slider dots */
+.slick-dots {
+    position: absolute;
+    bottom: -25px !important;
+    left: 50% !important;
+    transform: translateX(-50%) !important;
+    background: rgba(0, 0, 0, 0.6);
+    padding: 5px 15px !important;
+    border-radius: 20px;
+    display: flex !important;
+    justify-content: center;
+    gap: 8px;
+    width: auto !important;
+    margin: 0 !important;
+}
+
+/* Layout control buttons */
+.btn-control {
+    width: 40px !important;
+    height: 40px !important;
+    font-weight: 600;
+    font-size: 1rem;
+}
+
+@media (max-width: 768px) {
+    .cards-grid {
+        grid-template-columns: 1fr !important;
+    }
+    
+    .layout-controls button:nth-child(n+4) {
+        display: none; /* Hide 4+ column options on mobile */
+    }
+}
+
+/* Fix width inheritance and card sizing */
+.container {
+    width: 100%;
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 0 1rem;
+}
+
+.cards-grid {
+    display: grid;
+    gap: 1.5rem;
+    width: 100%;
+    transition: all 0.3s ease;
+}
+
+/* Adjust card widths based on layout */
+.cards-grid[data-columns="1"] { 
+    grid-template-columns: minmax(300px, 600px); 
+    justify-content: center;
+}
+
+.cards-grid[data-columns="2"] { 
+    grid-template-columns: repeat(2, minmax(250px, 1fr)); 
+}
+
+.cards-grid[data-columns="3"] { 
+    grid-template-columns: repeat(3, minmax(250px, 1fr)); 
+}
+
+.cards-grid[data-columns="4"] { 
+    grid-template-columns: repeat(4, minmax(220px, 1fr)); 
+}
+
+.cards-grid[data-columns="5"] { 
+    grid-template-columns: repeat(5, minmax(200px, 1fr)); 
+}
+
+.card {
+    width: 100%;
+    margin: 0;
+    height: 100%;
+}
+
+/* Fix slider height and prevent stretching */
+.slider {
+    height: 200px !important;
+    margin-bottom: 2.5rem !important;
+    overflow: visible !important;
+}
+
+.slider-item img {
+    width: 100%;
+    object-fit: cover;
+}
+
+@media (max-width: 1200px) {
+    .cards-grid[data-columns="4"],
+    .cards-grid[data-columns="5"] {
+        grid-template-columns: repeat(3, minmax(250px, 1fr));
+    }
+}
+
+@media (max-width: 992px) {
+    .cards-grid[data-columns="3"],
+    .cards-grid[data-columns="4"],
+    .cards-grid[data-columns="5"] {
+        grid-template-columns: repeat(2, minmax(250px, 1fr));
+    }
+}
+
+@media (max-width: 768px) {
+    .cards-grid {
+        grid-template-columns: minmax(280px, 1fr) !important;
+        justify-content: center;
+    }
+
+    .card {
+        max-width: 500px;
+        margin: 0 auto;
+    }
+}
+</style>
 
 <script>
-    $(document).ready(function(){
-        // Wait for DOM to be fully loaded
-        setTimeout(function() {
-            // Initialize slick slider with updated options
-            $('.slider').each(function() {
-                if (!$(this).hasClass('slick-initialized')) {
-                    $(this).slick({
-                        dots: true,
-                        infinite: true,
-                        speed: 300,
-                        slidesToShow: 1,
-                        adaptiveHeight: false,
-                        autoplay: true,
-                        autoplaySpeed: 5000,
-                        prevArrow: '<button type="button" class="slick-prev"><i class="fas fa-chevron-left"></i></button>',
-                        nextArrow: '<button type="button" class="slick-next"><i class="fas fa-chevron-right"></i></button>',
-                        customPaging: function(slider, i) {
-                            return $('<button />').addClass('dot');
-                        },
-                        appendDots: '.slick-dots-container', // Change this
-                        dotsClass: 'slick-dots'
-                    });
-                }
-            });
-        }, 100);
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize sliders with autoplay always on
+    $('.slider').slick({
+        dots: true,
+        infinite: true,
+        speed: 500,
+        slidesToShow: 1,
+        slidesToScroll: 1,
+        autoplay: true,
+        autoplaySpeed: 3000,
+        arrows: true,
+        pauseOnHover: true,
+        prevArrow: '<button type="button" class="slick-prev"><i class="fas fa-chevron-left"></i></button>',
+        nextArrow: '<button type="button" class="slick-next"><i class="fas fa-chevron-right"></i></button>'
+    });
 
-        // Auto-suggest functionality
-        $('#searchInput').on('keyup', function() {
-            const query = $(this).val();
-            if (query.length > 1) {
-                $.ajax({
-                    url: "{% url 'get_suggestions' %}",
-                    data: {
-                        'term': query
-                    },
-                    dataType: 'json',
-                    success: function(data) {
-                        const suggestionBox = $('#suggestionBox');
-                        suggestionBox.empty();
-                        
-                        if (data.suggestions.length > 0) {
-                            data.suggestions.forEach(function(suggestion) {
-                                const item = $('<div class="suggestion-item"></div>').text(suggestion);
-                                item.on('click', function() {
-                                    $('#searchInput').val(suggestion);
-                                    suggestionBox.hide();
-                                    $('#searchForm').submit();
-                                });
-                                suggestionBox.append(item);
-                            });
-                            suggestionBox.show();
-                        } else {
-                            suggestionBox.hide();
-                        }
-                    }
-                });
-            } else {
-                $('#suggestionBox').hide();
-            }
-        });
+    // Global openGallery function
+    window.openGallery = function(imgElement) {
+        const modal = document.getElementById('galleryModal');
+        const modalImg = document.getElementById('galleryImg');
+        const navigation = modal.querySelector('.gallery-navigation');
         
-        // Hide suggestions on click outside
-        $(document).on('click', function(e) {
-            if (!$(e.target).closest('.autocomplete-wrapper').length) {
-                $('#suggestionBox').hide();
+        if (!imgElement || !modal || !modalImg || !navigation) return;
+        
+        const galleryId = imgElement.getAttribute('data-gallery');
+        const allImages = Array.from(new Set(
+            Array.from(document.querySelectorAll(`[data-gallery="${galleryId}"]`))
+                .map(img => img.src)
+        )).map(src => {
+            const img = document.querySelector(`[data-gallery="${galleryId}"][src="${src}"]`);
+            return {
+                src: src,
+                index: parseInt(img.getAttribute('data-index'))
+            };
+        }).sort((a, b) => a.index - b.index);
+
+        let currentIdx = allImages.findIndex(img => img.src === imgElement.src);
+        if (currentIdx === -1) currentIdx = 0;
+        
+        let zoomLevel = 1;
+        modalImg.src = imgElement.src;
+        modal.style.display = "flex";
+        
+        // Update navigation dots
+        navigation.innerHTML = allImages.map((_, index) => 
+            `<button class="gallery-dot ${index === currentIdx ? 'active' : ''}" data-index="${index}"></button>`
+        ).join('');
+
+        // Navigation handlers
+        const showImage = (index) => {
+            currentIdx = index;
+            modalImg.src = allImages[index].src;
+            zoomLevel = 1;
+            modalImg.style.transform = `scale(${zoomLevel})`;
+            navigation.querySelectorAll('.gallery-dot').forEach((dot, idx) => {
+                dot.classList.toggle('active', idx === index);
+            });
+        };
+
+        // Attach event handlers
+        modal.querySelector('.gallery-prev').onclick = (e) => {
+            e.stopPropagation();
+            showImage((currentIdx - 1 + allImages.length) % allImages.length);
+        };
+
+        modal.querySelector('.gallery-next').onclick = (e) => {
+            e.stopPropagation();
+            showImage((currentIdx + 1) % allImages.length);
+        };
+
+        // Gallery controls
+        const controls = {
+            zoom: {
+                in: function() {
+                    zoomLevel = Math.min(zoomLevel + 0.2, 3);
+                    modalImg.style.transform = `scale(${zoomLevel})`;
+                },
+                out: function() {
+                    zoomLevel = Math.max(zoomLevel - 0.2, 0.5);
+                    modalImg.style.transform = `scale(${zoomLevel})`;
+                }
+            },
+            navigation: {
+                prev: function() {
+                    showImage((currentIdx - 1 + allImages.length) % allImages.length);
+                },
+                next: function() {
+                    showImage((currentIdx + 1) % allImages.length);
+                }
+            },
+            download: function() {
+                const link = document.createElement('a');
+                link.href = modalImg.src;
+                link.download = 'image.jpg';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            },
+            close: function() {
+                modal.style.display = "none";
             }
-        });
+        };
 
-        // Sort functionality
-        $('#sort-by').change(function() {
-            var currentUrl = new URL(window.location.href);
-            currentUrl.searchParams.set('sort_by', $(this).val());
-            window.location.href = currentUrl.toString();
-        });
-
-        // Fullscreen Gallery Functionality
-        let currentGallery = [];
-        let currentIndex = 0;
-        let currentScale = 1;
-
-        $('.gallery-img').click(function() {
-            const galleryId = $(this).data('gallery');
-            currentIndex = $(this).data('index');
-            currentScale = 1;
-            
-            currentGallery = $(`.gallery-img[data-gallery="${galleryId}"]`).map(function() {
-                return $(this).attr('src');
-            }).get();
-
-            showGalleryImage(currentIndex);
-            $('#fullscreen-gallery').addClass('active');
-        });
-
-        function showGalleryImage(index) {
-            $('#gallery-img').attr('src', currentGallery[index]);
-            updateGalleryDots();
-        }
-
-        function updateGalleryDots() {
-            const dots = currentGallery.map((_, i) => 
-                `<button class="gallery-dot ${i === currentIndex ? 'active' : ''}" data-index="${i}"></button>`
-            ).join('');
-            $('.gallery-dots').html(dots);
-        }
-
-        $('.gallery-close').click(function() {
-            $('#fullscreen-gallery').removeClass('active');
-        });
-
-        $('.gallery-prev').click(function() {
-            currentIndex = (currentIndex - 1 + currentGallery.length) % currentGallery.length;
-            showGalleryImage(currentIndex);
-        });
-
-        $('.gallery-next').click(function() {
-            currentIndex = (currentIndex + 1) % currentGallery.length;
-            showGalleryImage(currentIndex);
-        });
-
-        $(document).on('click', '.gallery-dot', function() {
-            currentIndex = $(this).data('index');
-            showGalleryImage(currentIndex);
-        });
-
-        // Close gallery with escape key
-        $(document).keyup(function(e) {
-            if (e.key === "Escape") {
-                $('#fullscreen-gallery').removeClass('active');
-            }
-        });
-
-        // Zoom functionality
-        $('.gallery-zoom-in').click(function() {
-            currentScale = Math.min(currentScale + 0.2, 3);
-            updateZoom();
-        });
-
-        $('.gallery-zoom-out').click(function() {
-            currentScale = Math.max(currentScale - 0.2, 0.5);
-            updateZoom();
-        });
-
-        function updateZoom() {
-            $('#gallery-img').css('transform', `scale(${currentScale})`);
-        }
-
-        // Download functionality
-        $('.gallery-download').click(function() {
-            const imgUrl = currentGallery[currentIndex];
-            const link = document.createElement('a');
-            link.href = imgUrl;
-            link.download = 'image.jpg';
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-        });
+        // Attach controls
+        modal.querySelector('.gallery-prev').onclick = (e) => {
+            e.stopPropagation();
+            controls.navigation.prev();
+        };
+        modal.querySelector('.gallery-next').onclick = (e) => {
+            e.stopPropagation();
+            controls.navigation.next();
+        };
+        modal.querySelector('.zoom-in').onclick = (e) => {
+            e.stopPropagation();
+            controls.zoom.in();
+        };
+        modal.querySelector('.zoom-out').onclick = (e) => {
+            e.stopPropagation();
+            controls.zoom.out();
+        };
+        modal.querySelector('.download').onclick = (e) => {
+            e.stopPropagation();
+            controls.download();
+        };
+        modal.querySelector('.close-gallery').onclick = (e) => {
+            e.stopPropagation();
+            controls.close();
+        };
+        modal.onclick = (e) => {
+            if (e.target === modal) controls.close();
+        };
 
         // Keyboard navigation
-        $(document).keydown(function(e) {
-            if ($('#fullscreen-gallery').hasClass('active')) {
-                switch(e.key) {
-                    case "ArrowLeft":
-                        $('.gallery-prev').click();
-                        break;
-                    case "ArrowRight":
-                        $('.gallery-next').click();
-                        break;
-                    case "Escape":
-                        $('.gallery-close').click();
-                        break;
-                    case "+":
-                        $('.gallery-zoom-in').click();
-                        break;
-                    case "-":
-                        $('.gallery-zoom-out').click();
-                        break;
-                }
+        function handleKeydown(e) {
+            switch(e.key) {
+                case 'ArrowLeft': controls.navigation.prev(); break;
+                case 'ArrowRight': controls.navigation.next(); break;
+                case 'Escape': controls.close(); break;
+            }
+        }
+
+        document.addEventListener('keydown', handleKeydown);
+        modal.addEventListener('hidden', () => {
+            document.removeEventListener('keydown', handleKeydown);
+        });
+
+        // Navigation dots
+        navigation.addEventListener('click', (e) => {
+            if (e.target.classList.contains('gallery-dot')) {
+                showImage(parseInt(e.target.dataset.index));
             }
         });
+    };
 
-        // Gallery functionality
-        $('.fullscreen-gallery').on('click', function(e) {
-            // Close gallery when clicking outside the image
-            if ($(e.target).hasClass('fullscreen-gallery')) {
-                $(this).removeClass('active');
-                currentScale = 1;
-                updateZoom();
-            }
-        });
+    // Layout control functionality
+    const cardsContainer = document.getElementById('cardsContainer');
+    const layoutButtons = document.querySelectorAll('.btn-control[id^="layout-"]');
 
-        // Stop propagation for gallery controls
-        $('.gallery-content, .gallery-toolbar button, .gallery-prev, .gallery-next, .gallery-dots').on('click', function(e) {
-            e.stopPropagation();
-        });
-
-        // Reinitialize gallery click handlers
-        $('.gallery-img').off('click').on('click', function(e) {
-            e.preventDefault();
-            const galleryId = $(this).data('gallery');
-            currentIndex = $(this).data('index');
-            currentScale = 1;
-            
-            currentGallery = $(`.gallery-img[data-gallery="${galleryId}"]`).map(function() {
-                return $(this).attr('src');
-            }).get();
-
-            showGalleryImage(currentIndex);
-            $('#fullscreen-gallery').addClass('active');
-        });
-
-        // Ensure gallery controls work
-        $('.gallery-toolbar button, .gallery-prev, .gallery-next').css('pointer-events', 'auto');
-        // Ensure gallery controls work
-        $('.gallery-toolbar button, .gallery-prev, .gallery-next').css('pointer-events', 'auto');
+    function updateLayout(columns) {
+        if (!cardsContainer) return;
         
-        // Refresh slider layout after content loads
-        $(window).on('load', function() {
-            $('.slider').slick('setPosition');
+        // Update grid
+        cardsContainer.setAttribute('data-columns', columns);
+        
+        // Update active state
+        layoutButtons.forEach(btn => {
+            btn.classList.toggle('active', btn.id === `layout-${columns}`);
         });
+        
+        localStorage.setItem('cardLayout', columns);
+    }
 
-        // Add navigation circle functionality
-        $('.slider').on('afterChange', function(event, slick, currentSlide) {
-            $(this).find('.nav-circle').removeClass('active');
-            $(this).find(`.nav-circle[data-slide="${currentSlide}"]`).addClass('active');
-        });
+    // Initialize layout
+    const savedLayout = localStorage.getItem('cardLayout') || '3';
+    updateLayout(savedLayout);
 
-        $('.nav-circle').click(function() {
-            const slideIndex = $(this).data('slide');
-            $(this).closest('.slider').slick('slickGoTo', slideIndex);
+    // Layout button handlers
+    layoutButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            const columns = this.id.split('-')[1];
+            updateLayout(columns);
         });
     });
+});
 </script>
 
-<!-- Add Font Awesome to base.html if not already present -->
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
 {% endblock %}

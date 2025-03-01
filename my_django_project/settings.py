@@ -1,22 +1,38 @@
 import os
 from pathlib import Path
-import time
+from dotenv import load_dotenv
+import dj_database_url
+
+load_dotenv()
 
 # Define the base directory
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 SECRET_KEY = '+je#35#djxep*19i)(^rt$k^=josy11ra(92qpd1p0$_x90k^&'
 
+# Database configuration
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'EngSa3d',
-        'USER': 'm7mod',
+        'NAME': 'postgres',
+        'USER': 'postgres.tfktuezhiykprdwgiamd',  # Updated user
         'PASSWORD': '275757',
-        'HOST': 'localhost',  # IP address of your PostgreSQL server
-        'PORT': '5432',  # Default is '5432'
+        'HOST': 'aws-0-us-west-1.pooler.supabase.com',  # Updated host
+        'PORT': '6543',  # Updated port
+        'OPTIONS': {
+            'sslmode': 'require',
+        }
     }
 }
+
+# Comment out or remove the dj_database_url configuration temporarily
+# DATABASES = {
+#     'default': dj_database_url.config(
+#         default=os.getenv('DATABASE_URL'),
+#         conn_max_age=600,
+#         ssl_require=True
+#     )
+# }
 
 ALLOWED_HOSTS = ['*']  # Allows access from any host
 
@@ -36,6 +52,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',  # Add this line
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -49,8 +66,8 @@ ROOT_URLCONF = 'my_django_project.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
-        'APP_DIRS': True,
+        'DIRS': [],  # Empty since we're using app templates
+        'APP_DIRS': True,  # This ensures Django looks for templates in app directories
         'OPTIONS': {
             'context_processors': [
                 'django.template.context_processors.debug',
@@ -87,21 +104,16 @@ USE_I18N = True
 USE_L10N = True
 USE_TZ = True
 
-# Static files (CSS, JavaScript, images)
-# https://docs.djangoproject.com/en/3.2/howto/static-files/
-
+# Static files (CSS, JavaScript, Images)
 STATIC_URL = '/static/'
-STATICFILES_DIRS = [
-    os.path.join(BASE_DIR, 'Home/static'),
-]
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+STATICFILES_DIRS = [
+    os.path.join(BASE_DIR, 'Home', 'static'),
+]
 
-# Add a setting to store the CSS version
-CSS_VERSION = str(time.time())
+# Add this to ensure static files are served in development
+if DEBUG:
+    STATICFILES_STORAGE = 'django.contrib.staticfiles.storage.StaticFilesStorage'
 
-# Override the STATICFILES_STORAGE setting
-STATICFILES_STORAGE = 'Home.storage.CacheBustingStaticFilesStorage'
-
-# Media files settings
-MEDIA_URL = '/media/'
-MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+# Storage Settings
+DEFAULT_FILE_STORAGE = 'Home.storage.SupabaseStorage'

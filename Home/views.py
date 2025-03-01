@@ -1,7 +1,7 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.forms import modelformset_factory, inlineformset_factory
 from .models import Subject, Image
-from .forms import SubjectForm, ImageForm
+from .forms import SubjectForm
 from django.http import JsonResponse
 from django.template.loader import render_to_string
 from django.db.models import Q
@@ -9,6 +9,7 @@ from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.db import DatabaseError
 from django.utils import timezone
 import datetime
+from django.views.decorators.http import require_http_methods
 
 def image_list(request):
     # Get all subjects initially
@@ -23,7 +24,7 @@ def image_list(request):
     # Apply search filter
     if query:
         subjects_list = subjects_list.filter(
-            Q(customer__icontains=query) | Q(comment__icontains=query)
+            Q(customer__icontains=query) | Q(comment__icontains=(query))
         )
 
     # Apply status filter
@@ -59,8 +60,15 @@ def image_list(request):
         else:
             subject.status = 'waiting'
 
+    # Get items per page from request
+    items_per_page = request.GET.get('per_page', 12)
+    try:
+        items_per_page = int(items_per_page)
+    except ValueError:
+        items_per_page = 2
+    
     # Pagination
-    paginator = Paginator(subjects_list, 2)
+    paginator = Paginator(subjects_list, items_per_page)
     try:
         page_obj = paginator.page(page)
     except PageNotAnInteger:
@@ -92,52 +100,50 @@ def image_list(request):
         'done_count': done_count,
         'waiting_count': waiting_count,
         'expired_count': expired_count,
+        'items_per_page': items_per_page,
     }
     
     return render(request, 'home.html', context)
 
 def add_subject(request):
-    ImageFormSet = inlineformset_factory(Subject, Image, form=ImageForm, extra=1, can_delete=True)
-
     if request.method == 'POST':
-        subject_form = SubjectForm(request.POST)
-        if subject_form.is_valid():
-            subject = subject_form.save()
-            for key in request.FILES:
-                image = Image(
+        form = SubjectForm(request.POST)
+        if form.is_valid():
+            subject = form.save()
+            
+            # Handle multiple image uploads
+            for image in request.FILES.getlist('images'):
+                Image.objects.create(
                     subject=subject,
-                    image=request.FILES[key],
-                    title=request.POST.get('title'),
-                    comment=request.POST.get('comment'),
-                    date_limit=request.POST.get('date_limit')
+                    image=image
                 )
-                image.save()
-            subject.update_done_status()
             return redirect('image_list')
     else:
-        subject_form = SubjectForm()
-        return render(request, 'add_subject.html', {'subject_form': subject_form})
+        form = SubjectForm()
+    
+    return render(request, 'add_subject.html', {'form': form})
 
 def edit_subject(request, pk):
     subject = get_object_or_404(Subject, pk=pk)
     if request.method == 'POST':
-        subject_form = SubjectForm(request.POST, instance=subject)
-        if subject_form.is_valid():
-            subject_form.save()
-            for key in request.FILES:
-                image = Image(
+        form = SubjectForm(request.POST, instance=subject)
+        if form.is_valid():
+            subject = form.save()
+            
+            # Handle multiple image uploads
+            for image in request.FILES.getlist('images'):
+                Image.objects.create(
                     subject=subject,
-                    image=request.FILES[key],
-                    title=request.POST.get('title'),
-                    comment=request.POST.get('comment'),
-                    date_limit=request.POST.get('date_limit')
+                    image=image
                 )
-                image.save()
-            subject.update_done_status()
             return redirect('image_list')
     else:
-        subject_form = SubjectForm(instance=subject)
-    return render(request, 'edit_subject.html', {'subject_form': subject_form, 'subject': subject})
+        form = SubjectForm(instance=subject)
+    
+    return render(request, 'edit_subject.html', {
+        'form': form,
+        'subject': subject
+    })
 
 def delete_subject(request, pk):
     subject = get_object_or_404(Subject, pk=pk)
@@ -153,22 +159,23 @@ def delete_image(request, pk):
         return redirect('edit_subject', pk=image.subject.pk)
     return render(request, 'delete_image.html', {'image': image})
 
+@require_http_methods(["POST"])
 def delete_image_ajax(request, pk):
     """
     AJAX view for deleting images without page refresh
     """
-    if request.method == 'POST' and request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-        try:
-            image = get_object_or_404(Image, pk=pk)
-            subject_pk = image.subject.pk
-            image.delete()
-            # Update subject status after image deletion
-            subject = Subject.objects.get(pk=subject_pk)
-            subject.update_done_status()
-            return JsonResponse({'status': 'success', 'message': 'Image deleted successfully'})
-        except Exception as e:
-            return JsonResponse({'status': 'error', 'message': str(e)})
-    return JsonResponse({'status': 'error', 'message': 'Invalid request'})
+    try:
+        image = get_object_or_404(Image, pk=pk)
+        image.delete()
+        return JsonResponse({
+            'status': 'success',
+            'message': 'Image deleted successfully'
+        })
+    except Exception as e:
+        return JsonResponse({
+            'status': 'error',
+            'message': str(e)
+        }, status=500)
 
 def toggle_image_done(request, pk):
     image = get_object_or_404(Image, pk=pk)
