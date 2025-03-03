@@ -4,7 +4,8 @@ FROM python:3.9-slim
 ENV PYTHONUNBUFFERED=1 \
     PYTHONIOENCODING=utf8 \
     LANG=C.UTF-8 \
-    LC_ALL=C.UTF-8
+    LC_ALL=C.UTF-8 \
+    PORT=8000
 
 # Set work directory
 WORKDIR /app
@@ -35,5 +36,8 @@ RUN rm -rf /app/staticfiles/*
 # Collect static files
 RUN python manage.py collectstatic --noinput --clear
 
+# Expose the port
+EXPOSE $PORT
+
 # Run migrations and start server
-CMD python manage.py migrate && gunicorn my_django_project.wsgi 
+CMD python manage.py migrate && gunicorn my_django_project.wsgi:application --bind 0.0.0.0:$PORT --timeout 300 

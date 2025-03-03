@@ -213,4 +213,17 @@ class CacheHeaderMiddleware:
             response['Pragma'] = 'no-cache'
             response['Expires'] = '0'
         
-        return response 
+        return response
+
+class HealthCheckLoggingMiddleware:
+    def __init__(self, get_response):
+        self.get_response = get_response
+
+    def __call__(self, request):
+        if request.path == '/health/':
+            start_time = time.time()
+            response = self.get_response(request)
+            duration = time.time() - start_time
+            logger.info(f'Health check responded with status {response.status_code} in {duration:.2f}s')
+            return response
+        return self.get_response(request) 

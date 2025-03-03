@@ -61,6 +61,7 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'Home.middleware.PerformanceMiddleware',  # Track performance
     'Home.middleware.CacheHeaderMiddleware',  # Add cache headers
+    'Home.middleware.HealthCheckLoggingMiddleware',
 ]
 
 if DEBUG:
