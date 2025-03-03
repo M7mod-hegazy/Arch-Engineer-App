@@ -23,11 +23,17 @@ COPY requirements.txt .
 RUN pip install --upgrade pip && \
     pip install -r requirements.txt
 
+# Create necessary directories
+RUN mkdir -p /app/staticfiles /app/media
+
 # Copy project files
 COPY . .
 
-# Collect static files
-RUN python manage.py collectstatic --noinput
+# Remove any existing static files
+RUN rm -rf /app/staticfiles/*
 
-# Run migrations
+# Collect static files
+RUN python manage.py collectstatic --noinput --clear
+
+# Run migrations and start server
 CMD python manage.py migrate && gunicorn my_django_project.wsgi 
