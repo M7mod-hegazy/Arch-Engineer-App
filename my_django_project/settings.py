@@ -17,6 +17,9 @@ SECRET_KEY = env('SECRET_KEY', default='your-default-secret-key-here')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = env.bool('DEBUG', default=False)
 
+# Allowed Hosts
+ALLOWED_HOSTS = ['*']  # For development and Railway deployment
+
 # Database configuration
 DATABASES = {
     'default': dj_database_url.config(
@@ -33,8 +36,6 @@ DATABASES = {
 #         ssl_require=True
 #     )
 # }
-
-ALLOWED_HOSTS = env.list('ALLOWED_HOSTS', default=['*'])
 
 INSTALLED_APPS = [
     'django.contrib.admin',
