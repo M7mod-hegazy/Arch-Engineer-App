@@ -15,7 +15,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = os.getenv('DJANGO_SECRET_KEY', 'your-default-secret-key-here')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = os.getenv('DEBUG', 'False').lower() == 'true'
+DEBUG = True  # Temporarily enable for troubleshooting
 
 # Allowed Hosts
 ALLOWED_HOSTS = ['*', '.up.railway.app']  # Allow Railway's domain
