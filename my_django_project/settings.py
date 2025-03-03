@@ -2,27 +2,27 @@ import os
 from pathlib import Path
 from dotenv import load_dotenv
 import dj_database_url
+import environ
 
-load_dotenv()
+# Initialize environ
+env = environ.Env()
+environ.Env.read_env()
 
 # Define the base directory
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-SECRET_KEY = '+je#35#djxep*19i)(^rt$k^=josy11ra(92qpd1p0$_x90k^&'
+# SECURITY WARNING: keep the secret key used in production secret!
+SECRET_KEY = env('SECRET_KEY', default='your-default-secret-key-here')
+
+# SECURITY WARNING: don't run with debug turned on in production!
+DEBUG = env.bool('DEBUG', default=False)
 
 # Database configuration
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'postgres',
-        'USER': 'postgres.tfktuezhiykprdwgiamd',  # Updated user
-        'PASSWORD': '275757',
-        'HOST': 'aws-0-us-west-1.pooler.supabase.com',  # Updated host
-        'PORT': '6543',  # Updated port
-        'OPTIONS': {
-            'sslmode': 'require',
-        }
-    }
+    'default': dj_database_url.config(
+        default=env('DATABASE_URL', default='sqlite:///db.sqlite3'),
+        conn_max_age=600
+    )
 }
 
 # Comment out or remove the dj_database_url configuration temporarily
@@ -34,9 +34,7 @@ DATABASES = {
 #     )
 # }
 
-ALLOWED_HOSTS = ['*']  # Allows access from any host
-
-DEBUG = True
+ALLOWED_HOSTS = env.list('ALLOWED_HOSTS', default=['*'])
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -115,6 +113,10 @@ USE_TZ = True
 STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static')]
+
+# Media files
+MEDIA_URL = '/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 # Cache settings
 CACHES = {
@@ -247,3 +249,15 @@ except ImportError:
 
 # Storage Settings
 DEFAULT_FILE_STORAGE = 'Home.storage.SupabaseStorage'
+
+# Whitenoise configuration
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+
+# Security settings for production
+if not DEBUG:
+    SECURE_SSL_REDIRECT = True
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+    SECURE_BROWSER_XSS_FILTER = True
+    SECURE_CONTENT_TYPE_NOSNIFF = True
+    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
