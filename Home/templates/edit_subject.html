@@ -10,6 +10,9 @@
             <h1>Edit Subject</h1>
         </div>
 
+        <!-- Feedback alert - initially hidden -->
+        <div id="feedbackAlert" class="alert" style="display: none;" role="alert"></div>
+
         <form method="post" enctype="multipart/form-data">
             {% csrf_token %}
             
@@ -38,7 +41,7 @@
                 <div class="image-preview-grid" id="allImagesContainer">
                     <!-- Existing Images -->
                     {% for image in subject.images.all %}
-                    <div class="preview-item">
+                    <div class="preview-item" id="image-container-{{ image.id }}">
                         <img src="{{ image.image.url }}" alt="Subject image">
                         <button type="button" class="delete-preview" data-id="{{ image.id }}" onclick="deleteExistingImage(this)">×</button>
                     </div>
@@ -58,6 +61,12 @@
 const dropZone = document.getElementById('dropZone');
 const imageInput = document.getElementById('imageInput');
 const allImagesContainer = document.getElementById('allImagesContainer');
+
+// Check if DataTransfer API is supported
+const isDataTransferSupported = typeof DataTransfer !== 'undefined';
+if (!isDataTransferSupported) {
+    console.warn('DataTransfer API not supported - image preview management will be limited');
+}
 
 // Drag and drop handlers
 ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
@@ -94,13 +103,19 @@ function handleDrop(e) {
 }
 
 function handleFiles(files) {
-    Array.from(files).forEach(previewFile);
-    // Update the input files
+    // Remove any existing new image previews to avoid duplicates
+    document.querySelectorAll('.preview-item.new-image').forEach(el => el.remove());
+    
+    // Create a fresh DataTransfer object
     const dataTransfer = new DataTransfer();
-    Array.from(files).forEach(file => dataTransfer.items.add(file));
-    if (imageInput.files.length > 0) {
-        Array.from(imageInput.files).forEach(file => dataTransfer.items.add(file));
-    }
+    
+    // Add new files
+    Array.from(files).forEach(file => {
+        previewFile(file);
+        dataTransfer.items.add(file);
+    });
+    
+    // Set the files in the input to just our new selection
     imageInput.files = dataTransfer.files;
 }
 
@@ -142,20 +157,82 @@ function removeNewImage(button) {
 }
 
 function deleteExistingImage(button) {
-    if (confirm('Are you sure you want to delete this image?')) {
+    // Custom confirm dialog would be better UX, using standard for simplicity
+    if (confirm('Are you sure you want to delete this image? This action cannot be undone.')) {
         const imageId = button.dataset.id;
+        const imageContainer = document.getElementById(`image-container-${imageId}`);
+        
+        // Show loading state
+        button.disabled = true;
+        imageContainer.classList.add('deleting');
+        
+        // Add overlay to indicate deletion in progress
+        const overlay = document.createElement('div');
+        overlay.className = 'deletion-overlay';
+        overlay.innerHTML = '<div class="spinner-border text-light" role="status"><span class="sr-only">Deleting...</span></div>';
+        imageContainer.appendChild(overlay);
+        
+        // Show feedback message
+        showFeedback('Deleting image...', 'info');
+        
         fetch(`/delete-image-ajax/${imageId}/`, {
             method: 'POST',
             headers: {
                 'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
             }
         })
-        .then(response => response.json())
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP error! Status: ${response.status}`);
+            }
+            return response.json();
+        })
         .then(data => {
             if (data.status === 'success') {
-                button.closest('.preview-item').remove();
+                // Success animation
+                imageContainer.classList.add('fade-out');
+                
+                // Mark in session storage that image was deleted (for home page to know)
+                try {
+                    sessionStorage.setItem('image_deleted', 'true');
+                    sessionStorage.setItem('last_subject_edited', data.subject_id);
+                } catch (e) {
+                    console.warn('Unable to store deletion state in session', e);
+                }
+                
+                setTimeout(() => {
+                    imageContainer.remove();
+                    showFeedback('Image deleted successfully!', 'success');
+                }, 300);
+            } else {
+                throw new Error(data.message || 'Error deleting image');
             }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            // Reset button and container
+            button.disabled = false;
+            imageContainer.classList.remove('deleting');
+            overlay.remove();
+            
+            // Show error message
+            showFeedback(`Failed to delete image: ${error.message}`, 'danger');
         });
+    }
+}
+
+// Function to show feedback alerts
+function showFeedback(message, type) {
+    const alert = document.getElementById('feedbackAlert');
+    alert.textContent = message;
+    alert.className = `alert alert-${type}`;
+    alert.style.display = 'block';
+    
+    // Auto hide success/info messages after 5 seconds
+    if (type === 'success' || type === 'info') {
+        setTimeout(() => {
+            alert.style.display = 'none';
+        }, 5000);
     }
 }
 </script>
@@ -202,6 +279,34 @@ function deleteExistingImage(button) {
 .delete-preview:hover {
     background: #dc3545;
     transform: scale(1.1);
+}
+
+/* Image deletion styles */
+.deleting {
+    opacity: 0.7;
+    pointer-events: none;
+}
+
+.deletion-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.4);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border-radius: 8px;
+}
+
+.fade-out {
+    animation: fadeOut 0.3s ease;
+}
+
+@keyframes fadeOut {
+    from { opacity: 1; }
+    to { opacity: 0; }
 }
 </style>
 {% endblock %}

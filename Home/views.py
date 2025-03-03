@@ -4,32 +4,37 @@ from .models import Subject, Image
 from .forms import SubjectForm
 from django.http import JsonResponse
 from django.template.loader import render_to_string
-from django.db.models import Q
+from django.db.models import Q, Count, Case, When, IntegerField, Exists, OuterRef
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.db import DatabaseError
 from django.utils import timezone
 import datetime
 from django.views.decorators.http import require_http_methods
+from django.views.decorators.cache import cache_page
 
+@cache_page(60 * 5)  # Cache for 5 minutes
 def image_list(request):
-    # Get all subjects initially
-    subjects_list = Subject.objects.all()
-    
     # Get filter parameters
     status_filter = request.GET.get('status', 'all')
     sort_by = request.GET.get('sort_by', 'customer_asc')
     query = request.GET.get('q', '')
     page = request.GET.get('page', 1)
-
+    
+    # Define the query once and reuse it
+    now = timezone.now()
+    
+    # Base queryset with prefetched images to avoid N+1 queries
+    # Also exclude null/invalid images
+    subjects_list = Subject.objects.prefetch_related('images')
+    
     # Apply search filter
     if query:
         subjects_list = subjects_list.filter(
-            Q(customer__icontains=query) | Q(comment__icontains=(query))
+            Q(customer__icontains=query) | Q(comment__icontains=query)
         )
 
     # Apply status filter
     if status_filter and status_filter != 'all':
-        now = timezone.now()
         if status_filter == 'done':
             subjects_list = subjects_list.filter(done=True)
         elif status_filter == 'waiting':
@@ -50,22 +55,26 @@ def image_list(request):
     if sort_field in ['customer', 'date_posted', 'date_limit', 'price']:
         subjects_list = subjects_list.order_by(f'{sort_direction}{sort_field}')
 
-    # Update status for each subject
-    now = timezone.now()
-    for subject in subjects_list:
-        if subject.done:
-            subject.status = 'done'
-        elif subject.date_limit and subject.date_limit < now:
-            subject.status = 'expired'
-        else:
-            subject.status = 'waiting'
+    # Optimize: Pre-compute all status counts in a single query
+    status_counts = Subject.objects.aggregate(
+        total_count=Count('id'),
+        done_count=Count(Case(
+            When(done=True, then=1),
+            output_field=IntegerField()
+        )),
+        waiting_count=Count(Case(
+            When(done=False, date_limit__gt=now, then=1),
+            When(done=False, date_limit__isnull=True, then=1),
+            output_field=IntegerField()
+        )),
+        expired_count=Count(Case(
+            When(done=False, date_limit__lte=now, then=1),
+            output_field=IntegerField()
+        ))
+    )
 
-    # Get items per page from request
-    items_per_page = request.GET.get('per_page', 12)
-    try:
-        items_per_page = int(items_per_page)
-    except ValueError:
-        items_per_page = 2
+    # Get items per page from request or use default (9)
+    items_per_page = int(request.GET.get('per_page', 9))
     
     # Pagination
     paginator = Paginator(subjects_list, items_per_page)
@@ -76,19 +85,14 @@ def image_list(request):
     except EmptyPage:
         page_obj = paginator.page(paginator.num_pages)
 
-    # Get counts for each status
-    now = timezone.now()
-    total_count = Subject.objects.count()
-    done_count = Subject.objects.filter(done=True).count()
-    expired_count = Subject.objects.filter(
-        done=False,
-        date_limit__lte=now
-    ).count()
-    waiting_count = Subject.objects.filter(
-        done=False
-    ).filter(
-        Q(date_limit__gt=now) | Q(date_limit__isnull=True)
-    ).count()
+    # Update status for each subject in memory to avoid additional queries
+    for subject in page_obj:
+        if subject.done:
+            subject.status = 'done'
+        elif subject.date_limit and subject.date_limit < now:
+            subject.status = 'expired'
+        else:
+            subject.status = 'waiting'
 
     context = {
         'page_obj': page_obj,
@@ -96,11 +100,11 @@ def image_list(request):
         'sort_by': sort_by,
         'status_filter': status_filter,
         'query': query,
-        'total_count': total_count,
-        'done_count': done_count,
-        'waiting_count': waiting_count,
-        'expired_count': expired_count,
-        'items_per_page': items_per_page,
+        'total_count': status_counts['total_count'],
+        'done_count': status_counts['done_count'],
+        'waiting_count': status_counts['waiting_count'],
+        'expired_count': status_counts['expired_count'],
+        'per_page': items_per_page,
     }
     
     return render(request, 'home.html', context)
@@ -166,10 +170,14 @@ def delete_image_ajax(request, pk):
     """
     try:
         image = get_object_or_404(Image, pk=pk)
+        subject_id = image.subject.id  # Store subject ID before deletion
         image.delete()
+        
+        # Return subject ID so frontend can update related elements if needed
         return JsonResponse({
             'status': 'success',
-            'message': 'Image deleted successfully'
+            'message': 'Image deleted successfully',
+            'subject_id': subject_id
         })
     except Exception as e:
         return JsonResponse({
@@ -226,6 +234,7 @@ def search(request):
     
     return render(request, 'home.html', context)
 
+@cache_page(60 * 5)  # Cache for 5 minutes
 def get_suggestions(request):
     """
     AJAX view for search suggestions

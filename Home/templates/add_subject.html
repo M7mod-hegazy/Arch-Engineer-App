@@ -62,6 +62,17 @@ document.addEventListener('DOMContentLoaded', function() {
         now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
         dateInput.min = now.toISOString().slice(0, 16);
     }
+    
+    // Check if DataTransfer API is supported
+    if (typeof DataTransfer === 'undefined') {
+        console.warn('DataTransfer API not supported - image preview management will be limited');
+        
+        // Simplified handlers for browsers without DataTransfer support
+        imageInput.addEventListener('change', function(e) {
+            // Just show previews without trying to manage the files
+            Array.from(e.target.files).forEach(previewFile);
+        });
+    }
 });
 
 const dropZone = document.getElementById('dropZone');
@@ -106,13 +117,19 @@ function handleDrop(e) {
 }
 
 function handleFiles(files) {
-    Array.from(files).forEach(previewFile);
-    // Update the input files
+    // Clear existing previews to avoid duplicates
+    previewContainer.innerHTML = '';
+    
+    // Create a fresh DataTransfer object
     const dataTransfer = new DataTransfer();
-    Array.from(files).forEach(file => dataTransfer.items.add(file));
-    if (imageInput.files.length > 0) {
-        Array.from(imageInput.files).forEach(file => dataTransfer.items.add(file));
-    }
+    
+    // Add all new files to both preview and dataTransfer
+    Array.from(files).forEach(file => {
+        previewFile(file);
+        dataTransfer.items.add(file);
+    });
+    
+    // Replace the files in the input with just our new files
     imageInput.files = dataTransfer.files;
 }
 
@@ -139,17 +156,24 @@ imageInput.addEventListener('change', function(e) {
 
 function removePreview(button) {
     const previewItem = button.closest('.preview-item');
+    const index = Array.from(previewContainer.children).indexOf(previewItem);
+    
+    // Remove the preview element
     previewItem.remove();
     
-    // Remove file from input
-    const files = Array.from(imageInput.files);
-    const dataTransfer = new DataTransfer();
-    files.forEach((file, index) => {
-        if (index !== Array.from(previewContainer.children).indexOf(previewItem)) {
-            dataTransfer.items.add(file);
-        }
-    });
-    imageInput.files = dataTransfer.files;
+    // Remove corresponding file from the input element
+    if (index !== -1 && index < imageInput.files.length) {
+        const files = Array.from(imageInput.files);
+        const dataTransfer = new DataTransfer();
+        
+        files.forEach((file, i) => {
+            if (i !== index) {
+                dataTransfer.items.add(file);
+            }
+        });
+        
+        imageInput.files = dataTransfer.files;
+    }
 }
 </script>
 

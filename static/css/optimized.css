@@ -1,0 +1,262 @@
+/* Optimized CSS for faster rendering and performance */
+
+/* Card Grid Layout */
+.cards-grid {
+    display: grid;
+    gap: 1.5rem;
+    width: 100%;
+    transition: all 0.3s ease;
+    contain: layout style; /* Containment for better performance */
+}
+
+/* Define layouts with contain property for browser optimizations */
+.cards-grid[data-columns="1"] { 
+    grid-template-columns: 1fr; 
+    justify-content: center;
+    contain: layout style;
+}
+
+.cards-grid[data-columns="2"] { 
+    grid-template-columns: repeat(2, 1fr); 
+    contain: layout style;
+}
+
+.cards-grid[data-columns="3"] { 
+    grid-template-columns: repeat(3, 1fr); 
+    contain: layout style;
+}
+
+.cards-grid[data-columns="4"] { 
+    grid-template-columns: repeat(4, 1fr); 
+    contain: layout style;
+}
+
+.cards-grid[data-columns="5"] { 
+    grid-template-columns: repeat(5, 1fr); 
+    contain: layout style;
+}
+
+/* Card wrapper to ensure cards are responsive */
+.card-wrapper {
+    width: 100%;
+    contain: layout style;
+}
+
+/* Card optimizations */
+.card {
+    width: 100%;
+    margin: 0;
+    height: 100%;
+    will-change: transform; /* Hint for browser to optimize animations */
+    contain: content; /* Containment for better performance */
+    transition: transform 0.2s ease;
+}
+
+/* Optimized slider */
+.slider {
+    height: 200px !important; 
+    margin-bottom: 2.5rem !important;
+    overflow: visible !important;
+    contain: layout style; /* Containment for better performance */
+}
+
+.slider-item img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    will-change: transform; /* Hint for browser to optimize animations */
+    position: relative;
+    z-index: 1; /* Ensure image is above the overlay */
+}
+
+.slider-item {
+    position: relative;
+}
+
+/* Fixed: Image overlay now doesn't block clicks */
+.image-hover-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    opacity: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 24px;
+    transition: opacity 0.3s ease;
+    pointer-events: none; /* Ensure clicks pass through to the image underneath */
+    z-index: 2;
+}
+
+.slider-item:hover .image-hover-overlay {
+    opacity: 1;
+}
+
+.slider img {
+    backface-visibility: hidden; /* Prevent flickering */
+}
+
+/* Gallery optimizations */
+.modal-gallery {
+    display: none;
+    position: fixed;
+    z-index: 9999;
+    padding: 50px;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0,0,0,0.9);
+    overscroll-behavior: contain; /* Prevent scrolling parent */
+}
+
+.modal-content {
+    margin: auto;
+    display: block;
+    max-width: 90%;
+    max-height: 90vh;
+    transform-origin: center;
+    transition: transform 0.3s ease;
+    will-change: transform; /* Hint for browser to optimize animations */
+}
+
+/* Gallery toolbar */
+.gallery-toolbar {
+    position: fixed;
+    top: 15px;
+    right: 15px;
+    display: flex;
+    gap: 10px;
+}
+
+.gallery-toolbar button {
+    background: rgba(255, 255, 255, 0.2);
+    border: none;
+    color: white;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    -webkit-tap-highlight-color: transparent; /* Remove tap highlight on mobile */
+}
+
+/* Column controls horizontal layout */
+.size-control-group.horizontal {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 10px;
+}
+
+.control-section {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 10px;
+}
+
+/* Slick dots optimizations */
+.slick-dots {
+    position: absolute !important;
+    bottom: -30px !important;
+    left: 50% !important;
+    transform: translateX(-50%) !important;
+    background: rgba(0, 0, 0, 0.6);
+    padding: 5px 15px !important;
+    border-radius: 20px;
+    display: flex !important;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+    width: auto !important;
+    margin: 0 !important;
+    list-style: none;
+    z-index: 5;
+    contain: content; /* Containment for better performance */
+}
+
+/* Button optimizations */
+.btn-control {
+    width: 40px !important;
+    height: 40px !important;
+    padding: 0 !important;
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid #dee2e6;
+    background: #f8f9fa;
+    color: #6c757d;
+    transition: all 0.2s ease;
+    margin: 0 2px;
+    -webkit-tap-highlight-color: transparent; /* Remove tap highlight on mobile */
+}
+
+/* Size indicator styling */
+.size-indicator {
+    font-weight: bold;
+    min-width: 50px;
+    text-align: center;
+}
+
+/* Dark mode pagination */
+.dark-mode .pagination-container .page-link {
+    background-color: #343a40;
+    border-color: #495057;
+    color: #f8f9fa;
+}
+
+.dark-mode .pagination-container .page-item.active .page-link {
+    background-color: #0d6efd;
+    border-color: #0d6efd;
+    color: white;
+}
+
+.dark-mode .pagination-container .page-item.disabled .page-link {
+    background-color: #212529;
+    border-color: #343a40;
+    color: #6c757d;
+}
+
+/* Responsive optimizations */
+@media (max-width: 1200px) {
+    .cards-grid[data-columns="4"],
+    .cards-grid[data-columns="5"] {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+@media (max-width: 992px) {
+    .cards-grid[data-columns="3"],
+    .cards-grid[data-columns="4"],
+    .cards-grid[data-columns="5"] {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 768px) {
+    .cards-grid {
+        grid-template-columns: 1fr !important;
+    }
+    
+    /* Reduce transitions on mobile for better performance */
+    .card, 
+    .slider,
+    .btn-control,
+    .modal-content {
+        transition: none !important;
+    }
+    
+    /* Reduce animation complexity on mobile */
+    .slick-dots,
+    .gallery-toolbar button {
+        contain: strict;
+    }
+} 

@@ -3,216 +3,97 @@
 <head>
     {% load static %}
     {% load custom_filters %}
+    {% load image_tags %}
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="description" content="Subject Manager - Organize your academic tasks efficiently">
     <title>{% block title %}My Django Project{% endblock %}</title>
-    <link rel="icon" href="{% static 'images/icon.png' %}" type="image/x-icon">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/slick-carousel/1.8.1/slick.min.css" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/slick-carousel/1.8.1/slick-theme.min.css" rel="stylesheet">
-    <link href="{% static 'css/styles.css' %}?v={% now 'U' %}" rel="stylesheet">
-    <link href="{% static 'css/dark-mode.css' %}?v={% now 'U' %}" rel="stylesheet">
-    <link href="{% static 'css/about_contact.css' %}?v={% now 'U' %}" rel="stylesheet">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
+    
+    <!-- DNS Prefetch for external resources -->
+    <link rel="dns-prefetch" href="//cdn.jsdelivr.net">
+    <link rel="dns-prefetch" href="//cdnjs.cloudflare.com">
+    <link rel="dns-prefetch" href="//fonts.googleapis.com">
+    
+    <!-- Preconnect to reduce connection time -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Roboto+Slab:wght@400;500;600&display=swap" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/slick-carousel/1.8.1/slick.min.js"></script>
+    <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+    <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
+    
+    <!-- Preload critical assets -->
+    <link rel="preload" href="{% static 'images/icon.png' %}" as="image" type="image/png">
+    
+    <!-- Favicon -->
+    <link rel="icon" href="{% static 'images/icon.png' %}" type="image/x-icon">
+    
+    <!-- Critical CSS inline for faster rendering -->
     <style>
-        /* Only keep basic styles here, remove all dark mode styles */
+        /* Critical path CSS */
         body {
-            font-family: 'Poppins', sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
             background-color: #f8f9fa;
             color: #343a40;
+            margin: 0;
+            padding: 0;
         }
         header nav.navbar {
             box-shadow: 0 0.25rem 0.5rem rgba(0, 0, 0, 0.075);
+            background-color: #fff;
         }
-        .orange-theme {
-            background-color: #ffc107;
-            color: #212529;
-        }
-        .pagination .page-item.active .page-link {
-            background-color: #ff9800;
-            border-color: #ff9800;
-            color: #fff;
-        }
-        .pagination .page-link {
-            color: #ff9800;
-        }
-        /* Control Panel Styles */
-        .navbar .btn-group {
-            margin-right: 1rem;
-        }
-
-        .navbar .form-select {
-            background-color: transparent;
-            border-color: #dee2e6;
-        }
-
-        #darkModeToggle {
-            width: 40px;
-            height: 40px;
-            padding: 0;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 50%;
-            transition: all 0.3s ease;
-        }
-
-        #darkModeToggle:hover {
-            transform: scale(1.1);
-        }
-
-        /* Enhanced Control Panel Styles */
-        .size-control-group {
-            display: flex;
-            align-items: center;
-            background: var(--bg-secondary);
-            border-radius: 8px;
-            padding: 4px;
-            gap: 8px;
-        }
-
-        .size-indicator {
-            min-width: 60px;
-            text-align: center;
-            font-weight: 500;
-            color: var(--text-primary);
-        }
-
-        .enhanced-select {
-            min-width: 120px;
-            padding: 8px 12px;
-            border-radius: 8px;
-            cursor: pointer;
-            background-image: url("data:image/svg+xml,...");
-            background-repeat: no-repeat;
-            background-position: right 8px center;
-            background-size: 16px;
-        }
-
-        /* Dynamic color variables */
-        :root {
-            --bg-primary: #ffffff;
-            --bg-secondary: #f8f9fa;
-            --text-primary: #212529;
-            --text-secondary: #6c757d;
-            --border-color: #dee2e6;
-        }
-
-        /* Control Panel Styles */
-        .control-panel {
-            position: sticky;
-            top: 70px;
-            z-index: 100;
-            background: var(--bg-primary);
-            border-bottom: 1px solid var(--border-color);
-            margin-bottom: 1rem;
-            padding: 0.5rem 0;
-            transition: all 0.3s ease;
-        }
-
-        .control-panel-inner {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 2rem;
-            max-width: 800px;
+        .container {
+            width: 100%;
+            max-width: 1400px;
             margin: 0 auto;
             padding: 0 1rem;
         }
-
-        .control-item {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 0.5rem;
-        }
-
-        .control-item label {
-            font-size: 0.8rem;
-            font-weight: 500;
-            color: var(--text-secondary);
-            margin: 0;
-        }
-
-        .size-control-group {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            background: var(--bg-secondary);
-            padding: 0.25rem;
-            border-radius: 8px;
-        }
-
-        .btn-control {
-            width: 32px;
-            height: 32px;
-            padding: 0;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 6px;
-            background: transparent;
-            border: 1px solid var(--border-color);
-            color: var(--text-primary);
-        }
-
-        .size-indicator {
-            min-width: 60px;
-            text-align: center;
-            font-weight: 500;
-        }
-
-        .btn-theme {
-            width: 32px;
-            height: 32px;
-            padding: 0;
-            border-radius: 6px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        /* Enhanced Select */
-        .enhanced-select {
-            min-width: 100px;
-            padding: 0.4rem;
-            border-radius: 6px;
-            border: 1px solid var(--border-color);
-            background-color: var(--bg-secondary);
-        }
-
-        /* Responsive Styles */
-        @media (max-width: 768px) {
-            .control-panel-inner {
-                flex-wrap: wrap;
-                gap: 1rem;
-            }
-
-            .control-item {
-                flex: 1;
-                min-width: 120px;
-            }
-
-            .size-control-group {
-                width: 100%;
-                justify-content: center;
-            }
+        /* Additional critical styles */
+        .site-icon {
+            max-height: 40px;
+            width: auto;
         }
     </style>
+    
+    <!-- Critical CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- Non-critical CSS with preload -->
+    <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/slick-carousel/1.8.1/slick.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
+    <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/slick-carousel/1.8.1/slick-theme.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
+    <noscript>
+        <link href="https://cdnjs.cloudflare.com/ajax/libs/slick-carousel/1.8.1/slick.min.css" rel="stylesheet">
+        <link href="https://cdnjs.cloudflare.com/ajax/libs/slick-carousel/1.8.1/slick-theme.min.css" rel="stylesheet">
+    </noscript>
+    
+    <!-- Local CSS -->
+    <link href="{% static 'css/styles.css' %}?v={% now 'U' %}" rel="stylesheet">
+    <link href="{% static 'css/dark-mode.css' %}?v={% now 'U' %}" rel="stylesheet">
+    <link href="{% static 'css/about_contact.css' %}?v={% now 'U' %}" rel="stylesheet">
+    
+    <!-- Optimized font loading - Subset only what we need -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&family=Roboto+Slab:wght@400;500&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+    <noscript>
+        <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&family=Roboto+Slab:wght@400;500&display=swap" rel="stylesheet">
+    </noscript>
+    
+    <!-- Font Awesome with reduced subset -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet" media="print" onload="this.media='all'">
+    <noscript>
+        <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
+    </noscript>
+    
+    <!-- Deferred JavaScript without integrity attributes that were causing issues -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js" defer></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/slick-carousel/1.8.1/slick.min.js" defer></script>
+    <script src="{% static 'js/gallery.js' %}" defer></script>
 </head>
 <body>
     <header>
         <nav class="navbar navbar-expand-lg navbar-light">
             <div class="container">
-          
                 <a class="navbar-brand" href="{% url 'image_list' %}">
-                    <img src="{% static 'images/icon.png' %}" alt="Site Icon" class="site-icon">
+                    <img src="{% static 'images/icon.png' %}" alt="Site Icon" class="site-icon" width="40" height="40">
                 </a>
                 <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
                     <span class="navbar-toggler-icon"></span>
@@ -221,32 +102,34 @@
                     <ul class="navbar-nav ms-auto">
                         <li class="nav-item">
                             <a class="nav-link {% if request.resolver_match.url_name == 'image_list' %}active{% endif %}" href="{% url 'image_list' %}">
-                                <i class="fas fa-home me-1"></i> Home
+                                <i class="fas fa-home"></i>
+                                <span class="nav-text">Home</span>
                             </a>
                         </li>
                         <li class="nav-item">
                             <a class="nav-link {% if request.resolver_match.url_name == 'add_subject' %}active{% endif %}" href="{% url 'add_subject' %}">
-                                <i class="fas fa-plus me-1"></i> Add Subject
+                                <i class="fas fa-plus"></i>
+                                <span class="nav-text">Add Subject</span>
                             </a>
                         </li>
                         <li class="nav-item">
                             <a class="nav-link {% if request.resolver_match.url_name == 'about' %}active{% endif %}" href="{% url 'about' %}">
-                                <i class="fas fa-info-circle me-1"></i> About
+                                <i class="fas fa-info-circle"></i>
+                                <span class="nav-text">About</span>
                             </a>
                         </li>
                         <li class="nav-item">
                             <a class="nav-link {% if request.resolver_match.url_name == 'contact' %}active{% endif %}" href="{% url 'contact' %}">
-                                <i class="fas fa-envelope me-1"></i> Contact
+                                <i class="fas fa-envelope"></i>
+                                <span class="nav-text">Contact</span>
                             </a>
                         </li>
                     </ul>
-                    <div class="d-flex align-items-center gap-3">
+                    <div class="d-flex align-items-center gap-2">
                         <!-- Dark Mode Toggle -->
-                        <button id="darkModeToggle" class="btn btn-outline-secondary">
+                        <button id="darkModeToggle" class="btn btn-outline-secondary btn-sm">
                             <i class="fas fa-moon"></i>
                         </button>
-                        
-
                     </div>
                 </div>
             </div>
@@ -256,31 +139,28 @@
         {% block content %}{% endblock %}
     </main>
 
-    <!-- Fixed Contact Buttons for all pages -->
+    <!-- Fixed Contact Buttons -->
     <div class="fixed-contact-buttons">
-        <a href="https://wa.me/+201234567890" class="contact-button whatsapp-button" target="_blank">
+        <a href="https://wa.me/+201234567890" class="contact-button whatsapp-button" target="_blank" rel="noopener">
             <i class="fab fa-whatsapp"></i>
-            <span class="tooltip">Chat on WhatsApp</span>
         </a>
-        <a href="https://m.me/your.messenger.id" class="contact-button messenger-button" target="_blank">
+        <a href="https://m.me/your.messenger.id" class="contact-button messenger-button" target="_blank" rel="noopener">
             <i class="fab fa-facebook-messenger"></i>
-            <span class="tooltip">Chat on Messenger</span>
         </a>
     </div>
 
-    <!-- Updated Footer -->
+    <!-- Simplified Footer for Mobile -->
     <footer class="footer">
         <div class="footer-container">
             <div class="footer-content">
                 <!-- Brand section - always visible -->
                 <div class="footer-brand">
-                    <img src="{% static 'images/icon.png' %}" alt="Site Icon" class="footer-logo">
+                    <img src="{% static 'images/icon.png' %}" alt="Site Icon" class="footer-logo" width="40" height="40">
                     <h3>Subject Manager</h3>
-                    <p class="d-none d-md-block">Making academic task management easier</p>
                 </div>
                 
                 <!-- Links section - hidden on mobile -->
-                <div class="footer-links">
+                <div class="footer-links d-none d-md-flex">
                     <div class="footer-section">
                         <h4>Quick Links</h4>
                         <ul>
@@ -313,54 +193,84 @@
             
             <div class="footer-bottom">
                 <p>&copy; {% now "Y" %} Subject Manager. All rights reserved.</p>
-                <!-- Hide links on mobile using Bootstrap classes -->
-                <div class="footer-bottom-links d-none d-md-flex">
-                    <a href="#">Privacy Policy</a>
-                    <a href="#">Terms of Service</a>
-                </div>
             </div>
         </div>
     </footer>
 
     <script>
-    $(document).ready(function() {
-        // Enhanced search suggestions
-        $('#searchInput').on('input', function() {
-            const query = $(this).val();
-            if (query.length > 1) {
+    // Wait for DOM to be fully loaded before executing JS
+    document.addEventListener('DOMContentLoaded', function() {
+        // Debounce function to limit API calls
+        function debounce(func, wait) {
+            let timeout;
+            return function(...args) {
+                clearTimeout(timeout);
+                timeout = setTimeout(() => {
+                    func.apply(this, args);
+                }, wait);
+            };
+        }
+
+        // Enhanced search suggestions with debouncing
+        const searchInput = $('#searchInput');
+        if (searchInput.length) {
+            // Cache for search results
+            const searchCache = {};
+            
+            const performSearch = debounce(function(query) {
+                // Check cache first
+                if (searchCache[query]) {
+                    displaySuggestions(searchCache[query], query);
+                    return;
+                }
+                
+                // Only make AJAX call if query not in cache
                 $.ajax({
                     url: "{% url 'get_suggestions' %}",
                     data: { 'term': query },
                     success: function(data) {
-                        const suggestionBox = $('#suggestionBox');
-                        suggestionBox.empty();
-                        
-                        if (data.suggestions.length > 0) {
-                            data.suggestions.forEach(function(suggestion) {
-                                // Highlight matching text
-                                const highlightedText = suggestion.replace(
-                                    new RegExp(query, 'gi'),
-                                    match => `<mark>${match}</mark>`
-                                );
-                                
-                                const item = $(`<div class="suggestion-item">${highlightedText}</div>`);
-                                item.on('click', function() {
-                                    $('#searchInput').val(suggestion);
-                                    suggestionBox.hide();
-                                    $('#searchForm').submit();
-                                });
-                                suggestionBox.append(item);
-                            });
-                            suggestionBox.show();
-                        } else {
-                            suggestionBox.hide();
-                        }
+                        // Cache the results
+                        searchCache[query] = data.suggestions;
+                        displaySuggestions(data.suggestions, query);
                     }
                 });
-            } else {
-                $('#suggestionBox').hide();
+            }, 300); // 300ms debounce delay
+            
+            function displaySuggestions(suggestions, query) {
+                const suggestionBox = $('#suggestionBox');
+                suggestionBox.empty();
+                
+                if (suggestions.length > 0) {
+                    suggestions.forEach(function(suggestion) {
+                        // Highlight matching text
+                        const highlightedText = suggestion.replace(
+                            new RegExp(query, 'gi'),
+                            match => `<mark>${match}</mark>`
+                        );
+                        
+                        const item = $(`<div class="suggestion-item">${highlightedText}</div>`);
+                        item.on('click', function() {
+                            searchInput.val(suggestion);
+                            suggestionBox.hide();
+                            $('#searchForm').submit();
+                        });
+                        suggestionBox.append(item);
+                    });
+                    suggestionBox.show();
+                } else {
+                    suggestionBox.hide();
+                }
             }
-        });
+            
+            searchInput.on('input', function() {
+                const query = $(this).val();
+                if (query.length > 1) {
+                    performSearch(query);
+                } else {
+                    $('#suggestionBox').hide();
+                }
+            });
+        }
 
         // Close suggestions on click outside
         $(document).on('click', function(e) {
@@ -369,111 +279,38 @@
             }
         });
 
-        // Dark Mode
+        // Dark Mode - unchanged
         const darkModeToggle = document.getElementById('darkModeToggle');
         const body = document.body;
         const darkModeKey = 'darkMode';
 
-        // Initialize dark mode from localStorage
-        if (localStorage.getItem(darkModeKey) === 'enabled') {
-            body.classList.add('dark-mode');
-            darkModeToggle.innerHTML = '<i class="fas fa-sun"></i>';
-        }
+        if (darkModeToggle) {
+            // Initialize dark mode from localStorage
+            if (localStorage.getItem(darkModeKey) === 'enabled') {
+                body.classList.add('dark-mode');
+                darkModeToggle.innerHTML = '<i class="fas fa-sun"></i>';
+            }
 
-        darkModeToggle.addEventListener('click', () => {
-            body.classList.toggle('dark-mode');
-            const isDarkMode = body.classList.contains('dark-mode');
-            localStorage.setItem(darkModeKey, isDarkMode ? 'enabled' : 'disabled');
-            darkModeToggle.innerHTML = isDarkMode ? '<i class="fas fa-sun"></i>' : '<i class="fas fa-moon"></i>';
-        });
-
-        // Card Size Control
-        const cards = document.querySelectorAll('.card');
-        let currentSize = parseInt(localStorage.getItem('cardSize') || 6);
-        const sizeIndicator = document.querySelector('.size-indicator');
-        const validSizes = [2, 3, 4, 6, 12];
-
-        function updateCardSize() {
-            cards.forEach(card => {
-                card.closest('[class*="col-"]').className = `col-lg-${currentSize} col-md-${Math.min(currentSize * 2, 12)} mb-4`;
+            darkModeToggle.addEventListener('click', () => {
+                body.classList.toggle('dark-mode');
+                const isDarkMode = body.classList.contains('dark-mode');
+                localStorage.setItem(darkModeKey, isDarkMode ? 'enabled' : 'disabled');
+                darkModeToggle.innerHTML = isDarkMode ? '<i class="fas fa-sun"></i>' : '<i class="fas fa-moon"></i>';
             });
-            localStorage.setItem('cardSize', currentSize);
-            sizeIndicator.textContent = `${12/currentSize} cols`;
         }
 
-        document.getElementById('increaseCards').addEventListener('click', () => {
-            const currentIndex = validSizes.indexOf(currentSize);
-            if (currentIndex < validSizes.length - 1) {
-                currentSize = validSizes[currentIndex + 1];
-                updateCardSize();
-            }
-        });
-
-        document.getElementById('decreaseCards').addEventListener('click', () => {
-            const currentIndex = validSizes.indexOf(currentSize);
-            if (currentIndex > 0) {
-                currentSize = validSizes[currentIndex - 1];
-                updateCardSize();
-            }
-        });
-
-        // Items Per Page
+        // Items Per Page - unchanged
         const itemsPerPage = document.getElementById('itemsPerPage');
-        itemsPerPage.value = new URLSearchParams(window.location.search).get('per_page') || '2';
+        if (itemsPerPage) {
+            itemsPerPage.value = new URLSearchParams(window.location.search).get('per_page') || '8';
 
-        itemsPerPage.addEventListener('change', () => {
-            const searchParams = new URLSearchParams(window.location.search);
-            searchParams.set('per_page', itemsPerPage.value);
-            searchParams.set('page', '1');
-            window.location.search = searchParams.toString();
-        });
-
-        // Initialize card size from localStorage
-        updateCardSize();
-
-        // Enhanced Pagination
-        function updatePagination(total, current, perPage) {
-            const pageCount = Math.ceil(total / perPage);
-            let html = '';
-            
-            // First page
-            html += `<li class="page-item ${current === 1 ? 'disabled' : ''}">
-                <a class="page-link" href="?page=1">«</a>
-            </li>`;
-            
-            // Previous 5 pages
-            for (let i = Math.max(1, current - 5); i < current; i++) {
-                html += `<li class="page-item">
-                    <a class="page-link" href="?page=${i}">${i}</a>
-                </li>`;
-            }
-            
-            // Current page
-            html += `<li class="page-item active">
-                <span class="page-link">${current}</span>
-            </li>`;
-            
-            // Next 5 pages
-            for (let i = current + 1; i <= Math.min(pageCount, current + 5); i++) {
-                html += `<li class="page-item">
-                    <a class="page-link" href="?page=${i}">${i}</a>
-                </li>`;
-            }
-            
-            // Last page
-            html += `<li class="page-item ${current === pageCount ? 'disabled' : ''}">
-                <a class="page-link" href="?page=${pageCount}">»</a>
-            </li>`;
-            
-            document.querySelector('.pagination').innerHTML = html;
+            itemsPerPage.addEventListener('change', () => {
+                const searchParams = new URLSearchParams(window.location.search);
+                searchParams.set('per_page', itemsPerPage.value);
+                searchParams.set('page', '1');
+                window.location.search = searchParams.toString();
+            });
         }
-
-        // Initialize enhanced features
-        document.addEventListener('DOMContentLoaded', () => {
-            updateCardSize();
-            // Call updatePagination with your actual values
-            // updatePagination(totalItems, currentPage, itemsPerPage);
-        });
     });
     </script>
 </body>

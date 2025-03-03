@@ -47,19 +47,26 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'Home',  # Ensure your app is listed here
     'django.contrib.sites',
-    #
+    'django_cleanup.apps.CleanupConfig',  # Auto-delete files when models are deleted
+    'imagekit',  # For image processing
+    'compressor',  # For CSS/JS compression
 ]
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
-    'whitenoise.middleware.WhiteNoiseMiddleware',  # Add this line
+    'whitenoise.middleware.WhiteNoiseMiddleware',  # For static file serving
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'Home.middleware.PerformanceMiddleware',  # Track performance
+    'Home.middleware.CacheHeaderMiddleware',  # Add cache headers
 ]
+
+if DEBUG:
+    MIDDLEWARE.append('Home.middleware.DatabaseQueryCountMiddleware')  # Track DB queries in development
 
 ROOT_URLCONF = 'my_django_project.urls'
 
@@ -107,13 +114,136 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
-STATICFILES_DIRS = [
-    os.path.join(BASE_DIR, 'Home', 'static'),
+STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static')]
+
+# Cache settings
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+        'LOCATION': 'unique-snowflake',
+    }
+}
+
+# Comment out Redis cache attempt to avoid connection errors
+"""
+# Try to use Redis cache if available
+try:
+    import redis
+    CACHES = {
+        'default': {
+            'BACKEND': 'django.core.cache.backends.redis.RedisCache',
+            'LOCATION': os.getenv('REDIS_URL', 'redis://127.0.0.1:6379/1'),
+            'OPTIONS': {
+                'CLIENT_CLASS': 'django_redis.client.DefaultClient',
+                'IGNORE_EXCEPTIONS': True,
+            }
+        }
+    }
+except ImportError:
+    # If Redis is not available, fall back to memcached if available
+    try:
+        import memcache
+        CACHES = {
+            'default': {
+                'BACKEND': 'django.core.cache.backends.memcached.PyMemcacheCache',
+                'LOCATION': os.getenv('MEMCACHED_URL', '127.0.0.1:11211'),
+            }
+        }
+    except ImportError:
+        # Already using LocMemCache, defined above
+        pass
+"""
+
+# Cache time to live is 15 minutes (in seconds)
+CACHE_TTL = 60 * 15
+
+# Session cache settings
+SESSION_ENGINE = 'django.contrib.sessions.backends.cached_db'
+SESSION_CACHE_ALIAS = 'default'
+
+# Performance monitoring settings
+SLOW_REQUEST_THRESHOLD = 500  # ms
+QUERY_COUNT_THRESHOLD = 20
+
+# Logging configuration
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'verbose': {
+            'format': '{levelname} {asctime} {module} {message}',
+            'style': '{',
+        },
+    },
+    'handlers': {
+        'console': {
+            'level': 'INFO',
+            'class': 'logging.StreamHandler',
+            'formatter': 'verbose',
+        },
+        'file': {
+            'level': 'INFO',
+            'class': 'logging.FileHandler',
+            'filename': os.path.join(BASE_DIR, 'performance.log'),
+            'formatter': 'verbose',
+        },
+    },
+    'loggers': {
+        'performance': {
+            'handlers': ['console', 'file'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+    },
+}
+
+# Enable WhiteNoise compression and caching
+WHITENOISE_USE_FINDERS = True
+WHITENOISE_MANIFEST_STRICT = False
+WHITENOISE_COMPRESS = True
+WHITENOISE_COMPRESS_OFFLINE = True
+
+# Django Compressor settings
+STATICFILES_FINDERS = [
+    'django.contrib.staticfiles.finders.FileSystemFinder',
+    'django.contrib.staticfiles.finders.AppDirectoriesFinder',
+    'compressor.finders.CompressorFinder',
 ]
 
-# Add this to ensure static files are served in development
-if DEBUG:
-    STATICFILES_STORAGE = 'django.contrib.staticfiles.storage.StaticFilesStorage'
+COMPRESS_ENABLED = True
+COMPRESS_OFFLINE = True
+COMPRESS_CSS_FILTERS = [
+    'compressor.filters.css_default.CssAbsoluteFilter',
+    'compressor.filters.cssmin.rCSSMinFilter',
+]
+
+# Cache settings for specific paths
+CACHE_MIDDLEWARE_SETTINGS = {
+    'static': 86400 * 30,  # 30 days for static files
+    'media': 86400 * 7,    # 7 days for media files
+    'api': 60,             # 1 minute for API responses
+    'default': 0,          # No caching by default
+}
+
+# ImageKit settings
+IMAGEKIT_CACHEFILE_DIR = 'CACHE/images'
+IMAGEKIT_DEFAULT_CACHEFILE_BACKEND = 'imagekit.cachefiles.backends.Simple'
+
+# Try to use Celery if available for background tasks
+try:
+    import celery
+    
+    CELERY_BROKER_URL = os.getenv('CELERY_BROKER_URL', 'redis://localhost:6379/0')
+    CELERY_RESULT_BACKEND = os.getenv('CELERY_RESULT_BACKEND', 'redis://localhost:6379/0')
+    CELERY_ACCEPT_CONTENT = ['json']
+    CELERY_TASK_SERIALIZER = 'json'
+    CELERY_RESULT_SERIALIZER = 'json'
+    CELERY_TIMEZONE = TIME_ZONE
+    
+    # Configure Celery to handle image processing in the background
+    IMAGEKIT_DEFAULT_CACHEFILE_STRATEGY = 'imagekit.cachefiles.strategies.Optimistic'
+except ImportError:
+    pass
 
 # Storage Settings
 DEFAULT_FILE_STORAGE = 'Home.storage.SupabaseStorage'

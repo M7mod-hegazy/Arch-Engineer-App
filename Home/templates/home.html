@@ -1,29 +1,30 @@
 {% extends 'base.html' %}
 {% load static %}
-{% load custom_filters %}  {# Add this at the top of your template #}
+{% load custom_filters %}
+{% load image_tags %}
 
 {% block title %}Subject Management{% endblock %}
 
 {% block content %}
 <div class="container mt-4">
     <!-- Modern Header -->
-    <div class="row ">
+    <div class="row">
         <div class="col-md-6">
             <h1 class="title text-center mb-5">Subject Management</h1>
         </div>
-       
     </div>
     
     <!-- Modern Filter Bar -->
     <div class="filter-bar">
         <!-- Search Box -->
         <div class="search-box">
-            <form method="get" class="d-flex">
-                <input type="text" name="q" class="form-control" placeholder="Search..." value="{{ query }}">
+            <form method="get" id="searchForm" class="d-flex">
+                <input type="text" name="q" id="searchInput" class="form-control" placeholder="Search..." value="{{ query }}">
                 <input type="hidden" name="status" value="{{ status_filter }}">
                 <input type="hidden" name="sort_by" value="{{ sort_by }}">
                 <button type="submit" class="btn btn-primary ml-2">Search</button>
             </form>
+            <div id="suggestionBox" class="suggestions-dropdown"></div>
         </div>
 
         <!-- Sort Dropdown -->
@@ -73,28 +74,26 @@
         </div>
     </div>
     
- 
-
-    <!-- Update the items count display and add clear buttons -->
+    <!-- Results info and display controls -->
     <div class="results-bar">
         <div class="results-info">
             Showing <strong>{{ page_obj.start_index }}</strong> - <strong>{{ page_obj.end_index }}</strong> of <strong>{{ total_count }}</strong> items
         </div>
-          <!-- Display Controls Panel -->
-    <div class="display-controls">
+          
+        <!-- Display Controls Panel - Horizontal controls -->
         <div class="controls-wrapper">
             <div class="control-section">
                 <label>Columns:</label>
-                <div class="btn-group layout-controls">
-                    <button type="button" class="btn btn-control" id="layout-1" title="1 Column">1</button>
-                    <button type="button" class="btn btn-control" id="layout-2" title="2 Columns">2</button>
-                    <button type="button" class="btn btn-control active" id="layout-3" title="3 Columns">3</button>
-                    <button type="button" class="btn btn-control" id="layout-4" title="4 Columns">4</button>
-                    <button type="button" class="btn btn-control" id="layout-5" title="5 Columns">5</button>
+                    <div class="size-control-group horizontal">
+                        <button id="decreaseCards" class="btn btn-control"><i class="fas fa-minus"></i></button>
+                        <span class="size-indicator">3 cols</span>
+                        <button id="increaseCards" class="btn btn-control"><i class="fas fa-plus"></i></button>
+                    </div>
                 </div>
             </div>
         </div>
-    </div>
+        
+        <!-- Active filters display -->
         <div class="active-filters">
             {% if query %}
             <span class="filter-tag">
@@ -110,31 +109,23 @@
             </span>
             {% endif %}
             
-            {% if sort_by %}
+            {% if sort_by and sort_by != 'customer_asc' %}
             <span class="filter-tag">
                 Sort: {{ sort_by|format_sort_label }}
                 <a href="?{% if query %}q={{ query }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}" class="remove-filter"><i class="fas fa-times"></i></a>
             </span>
             {% endif %}
             
-            {% if query or status_filter or sort_by %}
+            {% if query or status_filter != 'all' and status_filter or sort_by and sort_by != 'customer_asc' %}
             <a href="?" class="btn btn-outline-secondary btn-sm clear-all">Clear All</a>
             {% endif %}
         </div>
     </div>
     
-   
-  
-    
-       
-    
-    <!-- Add Subject - Floating Button -->
-    <a href="{% url 'add_subject' %}" class="btn btn-primary btn-add-subject">+</a>
-    
     <!-- Cards Grid -->
-    <div class="cards-grid" id="cardsContainer">
+    <div class="cards-grid" id="cardsContainer" data-columns="3">
         {% for subject in page_obj %}
-            <div class="col">
+            <div class="card-wrapper">
                 <div class="card status-{{ subject.status }}">
                     <div class="card-body">
                         <div class="d-flex justify-content-between align-items-start mb-3">
@@ -150,7 +141,7 @@
                         
                         <p class="card-text">{{ subject.comment }}</p>
                         
-                        <!-- Update the date display in card -->
+                        <!-- Date information -->
                         <div class="date-info">
                             <span>
                                 <i class="fas fa-calendar-alt"></i>
@@ -164,30 +155,36 @@
                             {% endif %}
                         </div>
                         
-                        <!-- Update the slider structure inside the card -->
-                        <div class="slider mt-4">
-                            {% for image in subject.images.all %}
-                                {% if image.image %}
-                                <div class="slider-item">
-                                    <img src="{{ image.image.url }}" 
-                                         alt="Image" 
-                                         class="gallery-img" 
-                                         data-gallery="gallery-{{ subject.pk }}" 
-                                         data-index="{{ forloop.counter0 }}"
-                                         onclick="openGallery(this)">
-                                    <div class="image-hover-overlay">
-                                        <i class="fas fa-search-plus"></i>
-                                    </div>
+                        <!-- Image slider with arrows and dots -->
+                        <div class="slider-container">
+                            <div class="slider-inner-container">
+                                <div class="slider mt-4">
+                                    {% for image in subject.images.all %}
+                                        {% if image.image %}
+                                        <div class="slider-item" data-id="{{ image.id }}">
+                                            <img src="{{ image.image.url }}" alt="Image {{ forloop.counter }}" 
+                                                 class="gallery-img" 
+                                                 data-gallery="gallery-{{ subject.id }}" 
+                                                 data-index="{{ forloop.counter0 }}"
+                                                 onclick="openGallery(this)"
+                                                 onerror="handleImageError(this)">
+                                            <!-- Fixed: pointer-events:none allows clicks to pass through -->
+                                            <div class="image-hover-overlay" style="pointer-events: none;">
+                                                <i class="fas fa-search-plus"></i>
+                                            </div>
+                                        </div>
+                                        {% endif %}
+                                    {% empty %}
+                                        <div class="empty-slider">
+                                            <p class="text-muted text-center">No images available</p>
+                                        </div>
+                                    {% endfor %}
                                 </div>
-                                {% endif %}
-                            {% empty %}
-                                <div class="empty-slider">
-                                    <p class="text-muted text-center">No images available</p>
-                                </div>
-                            {% endfor %}
+                            </div>
                         </div>
                         
-                        <div class="card-actions">
+                        <!-- Action buttons -->
+                        <div class="card-actions mt-auto">
                             <div class="btn-group w-100">
                                 <a href="{% url 'edit_subject' subject.pk %}" class="btn btn-primary" title="Edit Subject">
                                     <i class="fas fa-edit"></i>
@@ -211,37 +208,65 @@
         {% endfor %}
     </div>
 
-    <!-- Pagination -->
+    <!-- Improved Pagination with max 5 pages scope -->
     {% if page_obj.paginator.num_pages > 1 %}
-    <nav aria-label="Page navigation" class="mt-4">
+    <nav aria-label="Page navigation" class="mt-4 pagination-container">
         <ul class="pagination justify-content-center">
             {% if page_obj.has_previous %}
                 <li class="page-item">
-                    <a class="page-link" href="?page=1" title="First"><i class="fas fa-angle-double-left"></i></a>
+                    <a class="page-link" href="?page=1{% if query %}&q={{ query }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if sort_by %}&sort_by={{ sort_by }}{% endif %}" aria-label="First">
+                        <span aria-hidden="true">&laquo;&laquo;</span>
+                    </a>
                 </li>
                 <li class="page-item">
-                    <a class="page-link" href="?page={{ page_obj.previous_page_number }}" title="Previous"><i class="fas fa-angle-left"></i></a>
+                    <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if query %}&q={{ query }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if sort_by %}&sort_by={{ sort_by }}{% endif %}" aria-label="Previous">
+                        <span aria-hidden="true">&laquo;</span>
+                    </a>
+                </li>
+            {% else %}
+                <li class="page-item disabled">
+                    <span class="page-link">&laquo;&laquo;</span>
+                </li>
+                <li class="page-item disabled">
+                    <span class="page-link">&laquo;</span>
                 </li>
             {% endif %}
-
-            {% for num in page_obj.paginator.page_range %}
-                {% if page_obj.number == num %}
-                    <li class="page-item active">
-                        <span class="page-link">{{ num }}</span>
-                    </li>
-                {% else %}
-                    <li class="page-item">
-                        <a class="page-link" href="?page={{ num }}">{{ num }}</a>
-                    </li>
-                {% endif %}
-            {% endfor %}
-
+            
+            {% with ''|center:page_obj.paginator.num_pages as range %}
+                {% for _ in range %}
+                    {% with forloop.counter as i %}
+                        {% if i >= page_obj.number|add:"-2" and i <= page_obj.number|add:"2" %}
+                            {% if i >= 1 and i <= page_obj.paginator.num_pages %}
+                                <li class="page-item {% if i == page_obj.number %}active{% endif %}">
+                                    {% if i == page_obj.number %}
+                                        <span class="page-link">{{ i }}</span>
+                                    {% else %}
+                                        <a class="page-link" href="?page={{ i }}{% if query %}&q={{ query }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if sort_by %}&sort_by={{ sort_by }}{% endif %}">{{ i }}</a>
+                                    {% endif %}
+                                </li>
+                            {% endif %}
+                        {% endif %}
+                    {% endwith %}
+                {% endfor %}
+            {% endwith %}
+            
             {% if page_obj.has_next %}
                 <li class="page-item">
-                    <a class="page-link" href="?page={{ page_obj.next_page_number }}" title="Next"><i class="fas fa-angle-right"></i></a>
+                    <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if query %}&q={{ query }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if sort_by %}&sort_by={{ sort_by }}{% endif %}" aria-label="Next">
+                        <span aria-hidden="true">&raquo;</span>
+                    </a>
                 </li>
                 <li class="page-item">
-                    <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}" title="Last"><i class="fas fa-angle-double-right"></i></a>
+                    <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if query %}&q={{ query }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if sort_by %}&sort_by={{ sort_by }}{% endif %}" aria-label="Last">
+                        <span aria-hidden="true">&raquo;&raquo;</span>
+                    </a>
+                </li>
+            {% else %}
+                <li class="page-item disabled">
+                    <span class="page-link">&raquo;</span>
+                </li>
+                <li class="page-item disabled">
+                    <span class="page-link">&raquo;&raquo;</span>
                 </li>
             {% endif %}
         </ul>
@@ -249,487 +274,194 @@
     {% endif %}
 </div>
 
-<!-- Replace the gallery section with this updated version -->
-<div class="modal-gallery" id="galleryModal">
+<!-- Improved Gallery Modal -->
+<div id="galleryModal" class="modal-gallery">
     <div class="gallery-toolbar">
-        <button class="zoom-in" title="Zoom In"><i class="fas fa-search-plus"></i></button>
-        <button class="zoom-out" title="Zoom Out"><i class="fas fa-search-minus"></i></button>
-        <button class="download" title="Download"><i class="fas fa-download"></i></button>
-        <button class="close-gallery" title="Close"><i class="fas fa-times"></i></button>
+        <button onclick="closeGallery()" title="Close" class="gallery-close"><i class="fas fa-times"></i></button>
+        <button onclick="zoomIn()" title="Zoom In" class="gallery-zoom-in"><i class="fas fa-search-plus"></i></button>
+        <button onclick="zoomOut()" title="Zoom Out" class="gallery-zoom-out"><i class="fas fa-search-minus"></i></button>
+        <button onclick="rotateImage()" title="Rotate" class="gallery-rotate"><i class="fas fa-redo"></i></button>
     </div>
-    <button class="gallery-arrow gallery-prev" title="Previous"><i class="fas fa-chevron-left"></i></button>
-    <button class="gallery-arrow gallery-next" title="Next"><i class="fas fa-chevron-right"></i></button>
+    <button class="gallery-prev" onclick="prevImage()"><i class="fas fa-chevron-left"></i></button>
+    <button class="gallery-next" onclick="nextImage()"><i class="fas fa-chevron-right"></i></button>
     <img class="modal-content" id="galleryImg">
     <div class="gallery-navigation"></div>
 </div>
 
-<style>
-/* Update existing gallery styles */
-.modal-gallery {
-    display: none;
-    position: fixed;
-    z-index: 9999;
-    padding: 50px;
-    left: 0;
-    top: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(0,0,0,0.9);
-}
-
-.modal-content {
-    margin: auto;
-    display: block;
-    max-width: 90%;
-    max-height: 90vh;
-    transform-origin: center;
-    transition: transform 0.3s ease;
-}
-
-/* Gallery toolbar */
-.gallery-toolbar {
-    position: fixed;
-    top: 15px;
-    right: 15px;
-    display: flex;
-    gap: 10px;
-}
-
-.gallery-toolbar button {
-    background: rgba(255, 255, 255, 0.2);
-    border: none;
-    color: white;
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 20px;
-}
-
-.gallery-toolbar button:hover {
-    background: rgba(255, 255, 255, 0.3);
-}
-
-/* Fix slider visibility */
-.slider {
-    overflow: visible !important;
-}
-
-.slick-prev,
-.slick-next {
-    z-index: 1 !important;
-}
-
-/* Remove overlay from card */
-.image-hover-overlay {
-    pointer-events: none;
-}
-
-.gallery-img {
-    cursor: pointer;
-    position: relative;
-    z-index: 2;
-}
-
-.btn-control {
-    width: 40px !important;
-    height: 40px !important;
-    padding: 0 !important;
-    display: flex !important;
-    align-items: center;
-    justify-content: center;
-    border: 1px solid #dee2e6;
-    background: #f8f9fa;
-    color: #6c757d;
-    transition: all 0.2s ease;
-    margin: 0 2px;
-}
-
-.btn-control:hover {
-    background: #e9ecef;
-    color: #4361ee;
-    border-color: #4361ee;
-}
-
-.btn-control.active {
-    background: #4361ee !important;
-    color: white !important;
-    border-color: #4361ee !important;
-    box-shadow: 0 2px 5px rgba(67, 97, 238, 0.3);
-}
-
-.btn-control i {
-    font-size: 1.1rem;
-}
-
-.cards-grid {
-    display: grid;
-    gap: 1.5rem;
-    transition: all 0.3s ease;
-    width: 100%;
-}
-
-.cards-grid[data-columns="1"] { grid-template-columns: 1fr; }
-.cards-grid[data-columns="1"] .card { max-width: 100%; }
-
-.cards-grid[data-columns="2"] { grid-template-columns: repeat(2, 1fr); }
-.cards-grid[data-columns="2"] .card { max-width: 100%; }
-
-.cards-grid[data-columns="3"] { grid-template-columns: repeat(3, 1fr); }
-.cards-grid[data-columns="3"] .card { max-width: 100%; }
-
-.cards-grid[data-columns="4"] { grid-template-columns: repeat(4, 1fr); }
-.cards-grid[data-columns="4"] .card { max-width: 100%; }
-
-.cards-grid[data-columns="5"] { grid-template-columns: repeat(5, 1fr); }
-.cards-grid[data-columns="5"] .card { max-width: 100%; }
-
-/* Remove all other .slick-dots styles and replace with this single implementation */
-.slick-dots {
-    position: absolute !important;
-    bottom: -30px !important;
-    left: 50% !important;
-    transform: translateX(-50%) !important;
-    background: rgba(0, 0, 0, 0.6);
-    padding: 5px 15px !important;
-    border-radius: 20px;
-    display: flex !important;
-    justify-content: center;
-    align-items: center;
-    gap: 8px;
-    width: auto !important;
-    margin: 0 !important;
-    list-style: none;
-    z-index: 5;
-}
-
-.slick-dots li {
-    margin: 0 !important;
-    width: 8px !important;
-    height: 8px !important;
-}
-
-.slick-dots li button {
-    width: 8px !important;
-    height: 8px !important;
-    padding: 0 !important;
-    border-radius: 50% !important;
-    background: rgba(255, 255, 255, 0.4) !important;
-    border: none !important;
-    font-size: 0;
-    cursor: pointer;
-}
-
-.slick-dots li.slick-active button {
-    background: white !important;
-    transform: scale(1.2);
-}
-
-/* Enhanced slider dots */
-.slick-dots {
-    position: absolute;
-    bottom: -25px !important;
-    left: 50% !important;
-    transform: translateX(-50%) !important;
-    background: rgba(0, 0, 0, 0.6);
-    padding: 5px 15px !important;
-    border-radius: 20px;
-    display: flex !important;
-    justify-content: center;
-    gap: 8px;
-    width: auto !important;
-    margin: 0 !important;
-}
-
-/* Layout control buttons */
-.btn-control {
-    width: 40px !important;
-    height: 40px !important;
-    font-weight: 600;
-    font-size: 1rem;
-}
-
-@media (max-width: 768px) {
-    .cards-grid {
-        grid-template-columns: 1fr !important;
-    }
+<!-- Fixed Contact Buttons -->
+<div class="fixed-contact-buttons">
     
-    .layout-controls button:nth-child(n+4) {
-        display: none; /* Hide 4+ column options on mobile */
-    }
-}
-
-/* Fix width inheritance and card sizing */
-.container {
-    width: 100%;
-    max-width: 1400px;
-    margin: 0 auto;
-    padding: 0 1rem;
-}
-
-.cards-grid {
-    display: grid;
-    gap: 1.5rem;
-    width: 100%;
-    transition: all 0.3s ease;
-}
-
-/* Adjust card widths based on layout */
-.cards-grid[data-columns="1"] { 
-    grid-template-columns: minmax(300px, 600px); 
-    justify-content: center;
-}
-
-.cards-grid[data-columns="2"] { 
-    grid-template-columns: repeat(2, minmax(250px, 1fr)); 
-}
-
-.cards-grid[data-columns="3"] { 
-    grid-template-columns: repeat(3, minmax(250px, 1fr)); 
-}
-
-.cards-grid[data-columns="4"] { 
-    grid-template-columns: repeat(4, minmax(220px, 1fr)); 
-}
-
-.cards-grid[data-columns="5"] { 
-    grid-template-columns: repeat(5, minmax(200px, 1fr)); 
-}
-
-.card {
-    width: 100%;
-    margin: 0;
-    height: 100%;
-}
-
-/* Fix slider height and prevent stretching */
-.slider {
-    height: 200px !important;
-    margin-bottom: 2.5rem !important;
-    overflow: visible !important;
-}
-
-.slider-item img {
-    width: 100%;
-    object-fit: cover;
-}
-
-@media (max-width: 1200px) {
-    .cards-grid[data-columns="4"],
-    .cards-grid[data-columns="5"] {
-        grid-template-columns: repeat(3, minmax(250px, 1fr));
-    }
-}
-
-@media (max-width: 992px) {
-    .cards-grid[data-columns="3"],
-    .cards-grid[data-columns="4"],
-    .cards-grid[data-columns="5"] {
-        grid-template-columns: repeat(2, minmax(250px, 1fr));
-    }
-}
-
-@media (max-width: 768px) {
-    .cards-grid {
-        grid-template-columns: minmax(280px, 1fr) !important;
-        justify-content: center;
-    }
-
-    .card {
-        max-width: 500px;
-        margin: 0 auto;
-    }
-}
-</style>
+    <a href="{% url 'add_subject' %}" class="contact-button messenger-button" title="Add New Subject">
+        <i class="fas fa-plus"></i>
+        <span class="tooltip">Add New Supject</span>
+    </a>
+    <a href="https://wa.me/+201234567890" class="contact-button whatsapp-button" target="_blank">
+        <i class="fab fa-whatsapp"></i>
+        <span class="tooltip">Chat on WhatsApp</span>
+    </a>
+    <a href="https://m.me/your.messenger.id" class="contact-button messenger-button" target="_blank">
+        <i class="fab fa-facebook-messenger"></i>
+        <span class="tooltip">Chat on Messenger</span>
+    </a>
+</div>
 
 <script>
+// Initialize the image gallery functionality
 document.addEventListener('DOMContentLoaded', function() {
-    // Initialize sliders with autoplay always on
+    // Check if we're returning from an edit where images were deleted
+    const imageDeleted = sessionStorage.getItem('image_deleted') === 'true';
+    const lastSubjectEdited = sessionStorage.getItem('last_subject_edited');
+    
+    if (imageDeleted && lastSubjectEdited) {
+        // Clear the flags
+        sessionStorage.removeItem('image_deleted');
+        sessionStorage.removeItem('last_subject_edited');
+        
+        console.log('Detected image deletion for subject:', lastSubjectEdited);
+        
+        // Find slider of the subject that was edited
+        const subjectSliders = document.querySelectorAll(`.slider-item[data-id="${lastSubjectEdited}"]`);
+        if (subjectSliders.length === 0) {
+            // If no image items found for this subject, reinitialize all sliders
+            $('.slider').each(function() {
+                try {
+                    // Check if this slider has any items
+                    if ($(this).find('.slider-item').length === 0) {
+                        $(this).html(`
+                            <div class="empty-slider">
+                                <p class="text-muted text-center">No images available</p>
+                            </div>
+                        `);
+                    }
+                } catch (e) {
+                    console.warn('Error updating slider after deletion:', e);
+                }
+            });
+        }
+    }
+
+    // Initialize sliders with fixed width settings
     $('.slider').slick({
         dots: true,
-        infinite: true,
-        speed: 500,
+        arrows: true,
+        infinite: false,
+        speed: 300,
         slidesToShow: 1,
         slidesToScroll: 1,
-        autoplay: true,
-        autoplaySpeed: 3000,
-        arrows: true,
-        pauseOnHover: true,
-        prevArrow: '<button type="button" class="slick-prev"><i class="fas fa-chevron-left"></i></button>',
-        nextArrow: '<button type="button" class="slick-next"><i class="fas fa-chevron-right"></i></button>'
+        adaptiveHeight: false,
+        lazyLoad: 'ondemand',
+        variableWidth: false,
+        centerMode: false,
+        cssEase: 'linear',
+        touchThreshold: 100,
+        swipeToSlide: true,
+        draggable: false,
+        swipe: false,
+        accessibility: false,
+        autoWidth: false
     });
-
-    // Global openGallery function
-    window.openGallery = function(imgElement) {
-        const modal = document.getElementById('galleryModal');
-        const modalImg = document.getElementById('galleryImg');
-        const navigation = modal.querySelector('.gallery-navigation');
-        
-        if (!imgElement || !modal || !modalImg || !navigation) return;
-        
-        const galleryId = imgElement.getAttribute('data-gallery');
-        const allImages = Array.from(new Set(
-            Array.from(document.querySelectorAll(`[data-gallery="${galleryId}"]`))
-                .map(img => img.src)
-        )).map(src => {
-            const img = document.querySelector(`[data-gallery="${galleryId}"][src="${src}"]`);
-            return {
-                src: src,
-                index: parseInt(img.getAttribute('data-index'))
-            };
-        }).sort((a, b) => a.index - b.index);
-
-        let currentIdx = allImages.findIndex(img => img.src === imgElement.src);
-        if (currentIdx === -1) currentIdx = 0;
-        
-        let zoomLevel = 1;
-        modalImg.src = imgElement.src;
-        modal.style.display = "flex";
-        
-        // Update navigation dots
-        navigation.innerHTML = allImages.map((_, index) => 
-            `<button class="gallery-dot ${index === currentIdx ? 'active' : ''}" data-index="${index}"></button>`
-        ).join('');
-
-        // Navigation handlers
-        const showImage = (index) => {
-            currentIdx = index;
-            modalImg.src = allImages[index].src;
-            zoomLevel = 1;
-            modalImg.style.transform = `scale(${zoomLevel})`;
-            navigation.querySelectorAll('.gallery-dot').forEach((dot, idx) => {
-                dot.classList.toggle('active', idx === index);
-            });
-        };
-
-        // Attach event handlers
-        modal.querySelector('.gallery-prev').onclick = (e) => {
-            e.stopPropagation();
-            showImage((currentIdx - 1 + allImages.length) % allImages.length);
-        };
-
-        modal.querySelector('.gallery-next').onclick = (e) => {
-            e.stopPropagation();
-            showImage((currentIdx + 1) % allImages.length);
-        };
-
-        // Gallery controls
-        const controls = {
-            zoom: {
-                in: function() {
-                    zoomLevel = Math.min(zoomLevel + 0.2, 3);
-                    modalImg.style.transform = `scale(${zoomLevel})`;
-                },
-                out: function() {
-                    zoomLevel = Math.max(zoomLevel - 0.2, 0.5);
-                    modalImg.style.transform = `scale(${zoomLevel})`;
-                }
-            },
-            navigation: {
-                prev: function() {
-                    showImage((currentIdx - 1 + allImages.length) % allImages.length);
-                },
-                next: function() {
-                    showImage((currentIdx + 1) % allImages.length);
-                }
-            },
-            download: function() {
-                const link = document.createElement('a');
-                link.href = modalImg.src;
-                link.download = 'image.jpg';
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
-            },
-            close: function() {
-                modal.style.display = "none";
-            }
-        };
-
-        // Attach controls
-        modal.querySelector('.gallery-prev').onclick = (e) => {
-            e.stopPropagation();
-            controls.navigation.prev();
-        };
-        modal.querySelector('.gallery-next').onclick = (e) => {
-            e.stopPropagation();
-            controls.navigation.next();
-        };
-        modal.querySelector('.zoom-in').onclick = (e) => {
-            e.stopPropagation();
-            controls.zoom.in();
-        };
-        modal.querySelector('.zoom-out').onclick = (e) => {
-            e.stopPropagation();
-            controls.zoom.out();
-        };
-        modal.querySelector('.download').onclick = (e) => {
-            e.stopPropagation();
-            controls.download();
-        };
-        modal.querySelector('.close-gallery').onclick = (e) => {
-            e.stopPropagation();
-            controls.close();
-        };
-        modal.onclick = (e) => {
-            if (e.target === modal) controls.close();
-        };
-
-        // Keyboard navigation
-        function handleKeydown(e) {
-            switch(e.key) {
-                case 'ArrowLeft': controls.navigation.prev(); break;
-                case 'ArrowRight': controls.navigation.next(); break;
-                case 'Escape': controls.close(); break;
-            }
-        }
-
-        document.addEventListener('keydown', handleKeydown);
-        modal.addEventListener('hidden', () => {
-            document.removeEventListener('keydown', handleKeydown);
-        });
-
-        // Navigation dots
-        navigation.addEventListener('click', (e) => {
-            if (e.target.classList.contains('gallery-dot')) {
-                showImage(parseInt(e.target.dataset.index));
-            }
-        });
-    };
-
-    // Layout control functionality
+    
+    // Grid Column Control - using data-columns attribute for grid layout
+    const sizeIndicator = document.querySelector('.size-indicator');
     const cardsContainer = document.getElementById('cardsContainer');
-    const layoutButtons = document.querySelectorAll('.btn-control[id^="layout-"]');
-
-    function updateLayout(columns) {
-        if (!cardsContainer) return;
+    
+    // Available column configurations
+    const colConfigs = [
+        { cols: 1, label: '1 col' },
+        { cols: 2, label: '2 cols' },
+        { cols: 3, label: '3 cols' },
+        { cols: 4, label: '4 cols' },
+        { cols: 5, label: '5 cols' }
+    ];
+    
+    // Get saved preference from localStorage or use default (3)
+    let currentConfigIndex = parseInt(localStorage.getItem('cardColsIndex') || '2');
+    
+    // Update display based on current configuration
+    function updateCardLayout() {
+        const config = colConfigs[currentConfigIndex];
         
-        // Update grid
-        cardsContainer.setAttribute('data-columns', columns);
+        // Update the data-columns attribute on the container
+        cardsContainer.setAttribute('data-columns', config.cols);
         
-        // Update active state
-        layoutButtons.forEach(btn => {
-            btn.classList.toggle('active', btn.id === `layout-${columns}`);
-        });
+        // Update indicator
+        if (sizeIndicator) {
+            sizeIndicator.textContent = config.label;
+        }
         
-        localStorage.setItem('cardLayout', columns);
+        // Save preference
+        localStorage.setItem('cardColsIndex', currentConfigIndex.toString());
     }
 
     // Initialize layout
-    const savedLayout = localStorage.getItem('cardLayout') || '3';
-    updateLayout(savedLayout);
-
-    // Layout button handlers
-    layoutButtons.forEach(button => {
-        button.addEventListener('click', function() {
-            const columns = this.id.split('-')[1];
-            updateLayout(columns);
-        });
+    updateCardLayout();
+    
+    // Decrease columns (increase card size)
+    document.getElementById('decreaseCards')?.addEventListener('click', function() {
+        if (currentConfigIndex > 0) {
+            currentConfigIndex--;
+            updateCardLayout();
+        }
+    });
+    
+    // Increase columns (decrease card size)
+    document.getElementById('increaseCards')?.addEventListener('click', function() {
+        if (currentConfigIndex < colConfigs.length - 1) {
+            currentConfigIndex++;
+            updateCardLayout();
+        }
     });
 });
-</script>
 
+// Add this function to the page's script
+function handleImageError(img) {
+    // Mark this image as having an error
+    img.classList.add('image-error');
+    
+    // Get the parent container
+    const container = img.closest('.slider-item');
+    if (container) {
+        // Get the slider container
+        const slider = container.closest('.slider');
+        
+        // Remove the item completely instead of showing placeholder
+        container.remove();
+        
+        // Check if slider is now empty
+        if (slider.children.length === 0) {
+            // Add empty state message
+            slider.innerHTML = `
+                <div class="empty-slider">
+                    <p class="text-muted text-center">No images available</p>
+                </div>
+            `;
+        } else {
+            // Reinitialize the slider to update navigation
+            try {
+                $(slider).slick('unslick').slick({
+                    dots: true,
+                    arrows: true,
+                    infinite: false,
+                    speed: 300,
+                    slidesToShow: 1,
+                    slidesToScroll: 1,
+                    adaptiveHeight: false,
+                    lazyLoad: 'ondemand',
+                    variableWidth: false,
+                    centerMode: false,
+                    cssEase: 'linear',
+                    touchThreshold: 100,
+                    swipeToSlide: true,
+                    draggable: false,
+                    swipe: false,
+                    accessibility: false,
+                    autoWidth: false
+                });
+            } catch (e) {
+                console.warn('Error reinitializing slider:', e);
+            }
+        }
+    }
+}
+</script>
 {% endblock %}
