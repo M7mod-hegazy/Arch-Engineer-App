@@ -6,15 +6,40 @@ from django.http import JsonResponse, HttpResponse
 from django.template.loader import render_to_string
 from django.db.models import Q, Count, Case, When, IntegerField, Exists, OuterRef
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
-from django.db import DatabaseError
+from django.db import DatabaseError, connection
 from django.utils import timezone
 import datetime
 from django.views.decorators.http import require_http_methods
 from django.views.decorators.cache import cache_page
+from django.views.decorators.csrf import csrf_exempt
+import logging
+import sys
 
+logger = logging.getLogger(__name__)
+
+@csrf_exempt
+@require_http_methods(["GET", "HEAD"])
 def health_check(request):
-    """Simple health check endpoint that returns 200 OK."""
-    return HttpResponse("OK", status=200)
+    """Super lightweight health check endpoint."""
+    logger.info(f"Health check started - Method: {request.method}, Path: {request.path}")
+    
+    # Return immediately with 200 OK
+    response = HttpResponse(
+        content="OK",
+        status=200,
+        content_type="text/plain",
+        charset="utf-8"
+    )
+    
+    # Set headers to prevent caching
+    response["Cache-Control"] = "no-cache, no-store, must-revalidate, max-age=0"
+    response["Pragma"] = "no-cache"
+    response["Expires"] = "0"
+    response["Access-Control-Allow-Origin"] = "*"
+    response["Access-Control-Allow-Methods"] = "GET, HEAD"
+    
+    logger.info("Health check completed successfully")
+    return response
 
 @cache_page(60 * 5)  # Cache for 5 minutes
 def image_list(request):

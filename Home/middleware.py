@@ -3,9 +3,29 @@ import logging
 import re
 from django.conf import settings
 from django.utils.deprecation import MiddlewareMixin
+from django.http import HttpResponse
 
 # Configure logger
 logger = logging.getLogger('performance')
+
+class HealthCheckMiddleware:
+    def __init__(self, get_response):
+        self.get_response = get_response
+
+    def __call__(self, request):
+        if request.path == '/health':
+            logger.info(f"Health check intercepted - Method: {request.method}")
+            response = HttpResponse(
+                content="OK",
+                status=200,
+                content_type="text/plain",
+                charset="utf-8"
+            )
+            response["Cache-Control"] = "no-cache, no-store, must-revalidate, max-age=0"
+            response["Pragma"] = "no-cache"
+            response["Expires"] = "0"
+            return response
+        return self.get_response(request)
 
 class PerformanceMiddleware(MiddlewareMixin):
     """
@@ -220,10 +240,9 @@ class HealthCheckLoggingMiddleware:
         self.get_response = get_response
 
     def __call__(self, request):
-        if request.path == '/health/':
-            start_time = time.time()
-            response = self.get_response(request)
-            duration = time.time() - start_time
-            logger.info(f'Health check responded with status {response.status_code} in {duration:.2f}s')
-            return response
-        return self.get_response(request) 
+        if request.path == '/health':
+            logger.info(f"Health check request received - Method: {request.method}, Path: {request.path}")
+        response = self.get_response(request)
+        if request.path == '/health':
+            logger.info(f"Health check response sent - Status: {response.status_code}")
+        return response 

@@ -52,6 +52,7 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
+    'Home.middleware.HealthCheckMiddleware',  # Must be first to intercept health checks
     'django.middleware.security.SecurityMiddleware',
     'whitenoise.middleware.WhiteNoiseMiddleware',  # For static file serving
     'django.contrib.sessions.middleware.SessionMiddleware',
@@ -266,3 +267,6 @@ if not DEBUG:
     SECURE_BROWSER_XSS_FILTER = True
     SECURE_CONTENT_TYPE_NOSNIFF = True
     SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+
+# Disable automatic URL trailing slash redirects
+APPEND_SLASH = False

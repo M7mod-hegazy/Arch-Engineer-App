@@ -8,14 +8,8 @@
         "numReplicas": 1,
         "restartPolicyType": "ON_FAILURE",
         "restartPolicyMaxRetries": 10,
-        "healthcheckPath": "/health/",
-        "healthcheckTimeout": 300,
-        "startCommand": "gunicorn my_django_project.wsgi:application --bind 0.0.0.0:8080 --timeout 300",
-        "ports": [
-            {
-                "containerPort": 8080,
-                "protocol": "tcp"
-            }
-        ]
+        "healthcheckPath": "/health",
+        "healthcheckTimeout": 60,
+        "startCommand": "gunicorn my_django_project.wsgi:application --bind 0.0.0.0:8080 --timeout 300 --workers 2 --threads 4 --worker-class gthread --max-requests 1000 --max-requests-jitter 50 --log-level debug --access-logfile - --error-logfile - --capture-output"
     }
 }
