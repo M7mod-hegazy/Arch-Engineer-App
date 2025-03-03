@@ -12,10 +12,10 @@ environ.Env.read_env()
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = env('SECRET_KEY', default='your-default-secret-key-here')
+SECRET_KEY = os.getenv('DJANGO_SECRET_KEY', 'your-default-secret-key-here')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = env.bool('DEBUG', default=False)
+DEBUG = os.getenv('DEBUG', 'False').lower() == 'true'
 
 # Allowed Hosts
 ALLOWED_HOSTS = ['*', '.up.railway.app']  # Allow Railway's domain
@@ -255,6 +255,16 @@ except ImportError:
 
 # Storage Settings
 DEFAULT_FILE_STORAGE = 'Home.storage.SupabaseStorage'
+
+# AWS S3 / Supabase Storage settings
+AWS_ACCESS_KEY_ID = os.getenv('AWS_ACCESS_KEY_ID')
+AWS_SECRET_ACCESS_KEY = os.getenv('AWS_SECRET_ACCESS_KEY')
+AWS_STORAGE_BUCKET_NAME = os.getenv('AWS_STORAGE_BUCKET_NAME')
+AWS_S3_ENDPOINT_URL = os.getenv('AWS_S3_ENDPOINT')
+AWS_S3_REGION_NAME = os.getenv('AWS_S3_REGION')
+AWS_DEFAULT_ACL = 'public-read'
+AWS_QUERYSTRING_AUTH = False
+AWS_S3_FILE_OVERWRITE = False
 
 # Whitenoise configuration
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedStaticFilesStorage'

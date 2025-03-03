@@ -15,13 +15,13 @@ class CacheBustingStaticFilesStorage(ManifestStaticFilesStorage):
 
 class SupabaseStorage(S3Boto3Storage):
     """Custom storage class for Supabase with performance optimizations"""
-    access_key = '873e9bb211a47d1b66e69313a2d3fd10'
-    secret_key = '7d44b01faf9a3ab6d0e293e61da73ab4894cdd343fcc23107e854aff13970491'
-    bucket_name = 'images'
+    access_key = settings.AWS_ACCESS_KEY_ID
+    secret_key = settings.AWS_SECRET_ACCESS_KEY
+    bucket_name = settings.AWS_STORAGE_BUCKET_NAME
     location = ''
     file_overwrite = False
     default_acl = 'public-read'
-    custom_domain = 'tfktuezhiykprdwgiamd.supabase.co/storage/v1/object/public/images'
+    custom_domain = None
     cloudfront_domain = None
     
     def __init__(self, *args, **kwargs):
@@ -29,10 +29,10 @@ class SupabaseStorage(S3Boto3Storage):
             'access_key': self.access_key,
             'secret_key': self.secret_key,
             'bucket_name': self.bucket_name,
-            'endpoint_url': 'https://tfktuezhiykprdwgiamd.supabase.co/storage/v1/s3',
-            'region_name': 'us-east-1',
+            'endpoint_url': settings.AWS_S3_ENDPOINT_URL,
+            'region_name': settings.AWS_S3_REGION_NAME,
             'use_ssl': True,
-            'verify': False,
+            'verify': True,
             'addressing_style': 'path',
             'signature_version': 's3v4'
         })
@@ -51,13 +51,8 @@ class SupabaseStorage(S3Boto3Storage):
         # URL encode the name to handle special characters
         encoded_name = urllib.parse.quote(name)
         
-        # Handle domain configuration
-        if self.cloudfront_domain:
-            url = f"https://{self.cloudfront_domain}/{encoded_name}"
-        elif self.custom_domain:
-            url = f"https://{self.custom_domain}/{encoded_name}"
-        else:
-            url = f"https://tfktuezhiykprdwgiamd.supabase.co/storage/v1/object/public/{self.bucket_name}/{encoded_name}"
+        # Generate the URL using the bucket name from settings
+        url = f"{settings.AWS_S3_ENDPOINT_URL.replace('/s3', '')}/object/public/{self.bucket_name}/{encoded_name}"
         
         # Cache the URL for 1 hour (3600 seconds)
         cache.set(cache_key, url, 3600)
