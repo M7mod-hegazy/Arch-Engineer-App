@@ -1,7 +1,7 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.forms import modelformset_factory, inlineformset_factory
-from .models import Subject, Image
-from .forms import SubjectForm
+from ..models import Subject, Image
+from ..forms import SubjectForm
 from django.http import JsonResponse, HttpResponse
 from django.template.loader import render_to_string
 from django.db.models import Q, Count, Case, When, IntegerField, Exists, OuterRef
@@ -11,6 +11,10 @@ from django.utils import timezone
 import datetime
 from django.views.decorators.http import require_http_methods
 from django.views.decorators.cache import cache_page
+
+def health_check(request):
+    """Simple health check endpoint that returns 200 OK."""
+    return HttpResponse("OK", status=200)
 
 @cache_page(60 * 5)  # Cache for 5 minutes
 def image_list(request):
@@ -24,7 +28,6 @@ def image_list(request):
     now = timezone.now()
     
     # Base queryset with prefetched images to avoid N+1 queries
-    # Also exclude null/invalid images
     subjects_list = Subject.objects.prefetch_related('images')
     
     # Apply search filter
@@ -263,8 +266,4 @@ def about_view(request):
     return render(request, 'about.html')
 
 def contact_view(request):
-    return render(request, 'contact.html')
-
-def health_check(request):
-    """Simple health check endpoint that returns 200 OK."""
-    return HttpResponse("OK", status=200)
+    return render(request, 'contact.html') 

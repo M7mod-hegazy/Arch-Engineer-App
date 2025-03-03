@@ -18,7 +18,7 @@ SECRET_KEY = env('SECRET_KEY', default='your-default-secret-key-here')
 DEBUG = env.bool('DEBUG', default=False)
 
 # Allowed Hosts
-ALLOWED_HOSTS = ['*']  # For development and Railway deployment
+ALLOWED_HOSTS = ['*', '.up.railway.app']  # Allow Railway's domain
 
 # Database configuration
 DATABASES = {
