@@ -51,8 +51,12 @@ class SupabaseStorage(S3Boto3Storage):
         # URL encode the name to handle special characters
         encoded_name = urllib.parse.quote(name)
         
-        # Generate the URL using the bucket name from settings
-        url = f"{settings.AWS_S3_ENDPOINT_URL.replace('/s3', '')}/object/public/{self.bucket_name}/{encoded_name}"
+        # Extract the project ID from the endpoint URL
+        endpoint_url = settings.AWS_S3_ENDPOINT_URL or ''
+        project_id = endpoint_url.split('//')[1].split('.')[0] if '//' in endpoint_url else ''
+        
+        # Generate the URL using the Supabase format
+        url = f"https://{project_id}.supabase.co/storage/v1/object/public/{self.bucket_name}/{encoded_name}"
         
         # Cache the URL for 1 hour (3600 seconds)
         cache.set(cache_key, url, 3600)
