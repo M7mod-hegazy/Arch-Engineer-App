@@ -1,0 +1,10 @@
+**/tests/**
+**/*.pyc
+**/__pycache__
+.git
+.env
+.env.*
+*.sqlite3
+media/
+venv/
+node_modules/ 
