@@ -2,7 +2,7 @@ from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
-from Home.views.health import health_check
+from Home.views import health_check
 
 urlpatterns = [
     path('admin/', admin.site.urls),

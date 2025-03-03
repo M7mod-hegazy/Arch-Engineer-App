@@ -2,7 +2,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.forms import modelformset_factory, inlineformset_factory
 from .models import Subject, Image
 from .forms import SubjectForm
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponse
 from django.template.loader import render_to_string
 from django.db.models import Q, Count, Case, When, IntegerField, Exists, OuterRef
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
@@ -264,3 +264,7 @@ def about_view(request):
 
 def contact_view(request):
     return render(request, 'contact.html')
+
+def health_check(request):
+    """Simple health check endpoint that returns 200 OK."""
+    return HttpResponse("OK", status=200)
