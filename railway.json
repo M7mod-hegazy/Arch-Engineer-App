@@ -8,8 +8,8 @@
         "numReplicas": 1,
         "restartPolicyType": "ON_FAILURE",
         "restartPolicyMaxRetries": 10,
-        "healthcheckPath": "/health",
-        "healthcheckTimeout": 60,
-        "startCommand": "python manage.py collectstatic --noinput && python manage.py migrate && gunicorn my_django_project.wsgi:application -c gunicorn.conf.py"
+        "healthcheckPath": "/health/",
+        "healthcheckTimeout": 300,
+        "startCommand": "chmod +x /app/start.sh && /app/start.sh"
     }
 }

@@ -1,12 +1,45 @@
+# Git
 .git
 .gitignore
-.env
-*.pyc
+
+# Python
 __pycache__
-.pytest_cache
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+.env
+*.egg
+*.egg-info/
+dist/
+build/
+*.egg-info/
+.eggs/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Local development
 *.sqlite3
 media/
 staticfiles/
-venv/
 node_modules/
-*.log 
+
+# Logs and databases
+*.log
+*.sql
+*.sqlite
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db 
