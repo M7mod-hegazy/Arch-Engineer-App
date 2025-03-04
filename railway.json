@@ -10,6 +10,7 @@
         "restartPolicyMaxRetries": 10,
         "healthcheckPath": "/health/",
         "healthcheckTimeout": 300,
-        "startCommand": "chmod +x /app/start.sh && /app/start.sh"
+        "startCommand": "/app/start.sh",
+        "healthcheckInterval": 15
     }
 }

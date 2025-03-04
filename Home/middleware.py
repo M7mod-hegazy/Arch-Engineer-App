@@ -3,7 +3,8 @@ import logging
 import re
 from django.conf import settings
 from django.utils.deprecation import MiddlewareMixin
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse
+from django.db import connection
 
 # Configure logger
 logger = logging.getLogger('performance')
@@ -13,18 +14,27 @@ class HealthCheckMiddleware:
         self.get_response = get_response
 
     def __call__(self, request):
-        if request.path == '/health':
-            logger.info(f"Health check intercepted - Method: {request.method}")
-            response = HttpResponse(
-                content="OK",
-                status=200,
-                content_type="text/plain",
-                charset="utf-8"
-            )
-            response["Cache-Control"] = "no-cache, no-store, must-revalidate, max-age=0"
-            response["Pragma"] = "no-cache"
-            response["Expires"] = "0"
-            return response
+        if request.path == '/health/' or request.path == '/health':
+            try:
+                # Test database connection
+                with connection.cursor() as cursor:
+                    cursor.execute("SELECT 1")
+                    cursor.fetchone()
+                
+                # Return success response
+                response_data = {
+                    'status': 'healthy',
+                    'database': 'connected'
+                }
+                logger.info("Health check passed")
+                return JsonResponse(response_data)
+            except Exception as e:
+                logger.error(f"Health check failed: {str(e)}")
+                return JsonResponse({
+                    'status': 'unhealthy',
+                    'error': str(e)
+                }, status=500)
+        
         return self.get_response(request)
 
 class PerformanceMiddleware(MiddlewareMixin):
@@ -132,7 +142,6 @@ class DatabaseQueryCountMiddleware:
             return self.get_response(request)
         
         # Count database queries
-        from django.db import connection
         initial_queries = len(connection.queries)
         
         response = self.get_response(request)
